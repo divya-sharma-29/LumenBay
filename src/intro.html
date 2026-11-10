@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen Bay · CitySim Nexus</title>
+<meta name="description" content="Change one thing in Lumen Bay and watch it answer. A live 3D tour of the city behind CitySim Nexus.">
+<link rel="stylesheet" href="intro/fonts.css">
+<!-- Page design adapted from "Kage" by Meng To / ThreeUI Community (MIT licence, see docs/intro.md).
+     The 3D scene, copy and layout content are original to this project. -->
+<style>
+:root{
+  --ink:#06080b; --bone:#e8e4da; --bone-dim:#b6b3a8; --muted:#8a8c86;
+  --line:rgba(232,228,218,.15); --line-soft:rgba(232,228,218,.08);
+  --accent:#ff7a3c; --accent-2:#ffb347;
+  --pad:clamp(20px,3.4vw,56px); --nav-h:84px;
+  --ease:cubic-bezier(.22,.61,.36,1); --ease-out:cubic-bezier(.16,1,.3,1); --ease-io:cubic-bezier(.65,0,.35,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:auto}
+body{margin:0;background:var(--ink);color:var(--bone);font-family:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-weight:300;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.is-locked{overflow:hidden;height:100vh}
+::selection{background:var(--accent);color:#120a04}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent-2);outline-offset:4px}
+
+#stage{position:fixed;inset:0;z-index:0;overflow:hidden;background:#1b1612}
+.layer{position:absolute;inset:0;opacity:0;transition:opacity 1.4s var(--ease)}
+.layer.on{opacity:1}
+.frame{position:absolute;left:50%;top:50%;width:max(100vw,calc(100vh * 1.7897));aspect-ratio:1280/715;transform:translate(-50%,-50%) scale(1.06);will-change:transform}
+.frame img,.frame svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.frame img{object-fit:cover;animation:kb 38s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1.0) translate3d(0,0,0)}to{transform:scale(1.07) translate3d(-1.2%,-0.8%,0)}}
+.ov{opacity:0;transition:opacity 1s var(--ease) .5s}
+.layer.show-ov .ov{opacity:1}
+.ov text{font-family:'Onest',system-ui,sans-serif;font-weight:500;letter-spacing:.06em;fill:#fff;paint-order:stroke;stroke:rgba(10,12,16,.8);stroke-width:5px}
+.ov .pulse{animation:pulse 2.2s ease-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+#grade{position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(rgba(6,8,11,.4),rgba(6,8,11,.22) 40%,rgba(6,8,11,.5));transition:opacity .8s}
+#vignette{position:fixed;inset:0;z-index:55;pointer-events:none;background:radial-gradient(125% 95% at 50% 42%,transparent 45%,rgba(3,4,6,.6) 100%)}
+.page{position:relative;z-index:10;overflow-x:clip}
+
+.eyebrow{font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--bone-dim);text-shadow:0 1px 16px rgba(3,6,8,.9)}
+h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
+.display{text-transform:uppercase;line-height:1.055;letter-spacing:-.012em;text-shadow:0 2px 34px rgba(3,6,8,.8)}
+.h-hero{font-size:clamp(28px,3.4vw,52px)}
+.h-sec{font-size:clamp(28px,3.8vw,58px)}
+.body-lg{font-size:clamp(14px,1.05vw,17px);line-height:1.72;color:#cfccc2;text-shadow:0 1px 20px rgba(3,6,8,.9)}
+.body{font-size:14px;line-height:1.68;color:#c3c0b6;text-shadow:0 1px 18px rgba(3,6,8,.9)}
+
+/* reveal */
+[data-rv]{opacity:0}
+[data-rv="up"]{transform:translate3d(0,26px,0)}
+[data-rv].rv-in{opacity:1;transform:none;transition:opacity .9s var(--ease-out),transform 1.05s var(--ease-out)}
+.mask-line{display:block;overflow:hidden}
+.mask-line>span{display:block;transform:translate3d(0,110%,0);transition:transform 1.05s var(--ease-out)}
+.rv-in .mask-line>span,.mask-line.rv-in>span{transform:none}
+.no-js [data-rv],.no-js .mask-line>span{opacity:1;transform:none}
+
+/* preloader */
+#pre{position:fixed;inset:0;z-index:100;background:#06080b;display:flex;align-items:center;justify-content:center;transition:opacity .8s var(--ease),visibility .8s}
+#pre.done{opacity:0;visibility:hidden;pointer-events:none}
+.pre-in{width:min(420px,74vw);text-align:center}
+.pre-mark{margin:0 auto 22px;width:44px;height:44px}
+.pre-mark svg{width:100%;height:100%;display:block}
+.pre-name{font-size:12px;letter-spacing:.5em;color:var(--bone-dim);margin-bottom:20px;text-transform:uppercase}
+.pre-bar{position:relative;height:1px;background:rgba(232,228,218,.16);overflow:hidden}
+.pre-bar i{position:absolute;inset:0 100% 0 0;background:var(--bone);transition:right .35s linear}
+.pre-meta{display:flex;justify-content:space-between;margin-top:12px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.pre-meta b{font-weight:500;color:var(--bone-dim);font-variant-numeric:tabular-nums}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;width:100%;height:var(--nav-h);z-index:50;display:flex;align-items:center;gap:24px;padding:0 var(--pad);transition:transform .55s var(--ease)}
+.nav::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:rgba(6,8,11,.62);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:0;transition:opacity .5s linear}
+.nav.stuck::before{opacity:1}
+.nav.hide{transform:translate3d(0,-101%,0)}
+.brand{display:flex;align-items:center;gap:11px;flex:0 0 auto}
+.brand svg{width:34px;height:34px;display:block}
+.brand-tx{display:flex;flex-direction:column;line-height:1;gap:4px}
+.brand-tx b{font-size:12px;font-weight:500;letter-spacing:.26em}
+.brand-tx i{font-style:normal;font-size:8px;letter-spacing:.34em;color:var(--muted)}
+.nav-links{display:flex;gap:clamp(18px,2.6vw,44px);margin-left:auto;align-items:center}
+.nav-link{position:relative;font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--bone-dim);padding:6px 0;transition:color .3s}
+.nav-link:hover,.nav-link.on{color:var(--bone)}
+.nav-link.on::after{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:var(--accent)}
+.nav-open{border:1px solid var(--line);border-radius:100px;padding:9px 18px;color:var(--bone);transition:background .4s,color .4s}
+.nav-open:hover{background:var(--bone);color:#06080b}
+.nav-burger{display:none;margin-left:auto;width:26px;height:16px;position:relative;flex:0 0 auto}
+.nav-burger i{position:absolute;right:0;height:1.5px;background:var(--bone);width:26px;transition:transform .4s var(--ease-out)}
+.nav-burger i:nth-child(1){top:4px}.nav-burger i:nth-child(2){top:11px;width:17px}
+
+/* hero */
+.hero{position:relative;min-height:100svh;padding:0 var(--pad);display:flex;flex-direction:column}
+.hero::before{content:'';position:absolute;left:0;right:0;top:0;height:52%;pointer-events:none;background:linear-gradient(rgba(3,6,9,.6),rgba(3,6,9,.22) 55%,transparent)}
+.hero-top{padding-top:calc(var(--nav-h) + clamp(12px,3vh,36px));max-width:min(600px,50vw);position:relative;z-index:2}
+.hero-top .eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.hero h1{margin-bottom:18px}
+.hero-sub{max-width:380px}
+.hero-spacer{flex:1 1 auto;min-height:clamp(120px,24vh,280px)}
+.hero-foot{padding-bottom:clamp(22px,4.2vh,42px);position:relative;z-index:2}
+.hero-foot::before{content:'';position:absolute;left:calc(var(--pad) * -1);right:calc(var(--pad) * -1);bottom:0;height:150%;z-index:-1;pointer-events:none;background:linear-gradient(transparent,rgba(3,5,8,.82) 60%)}
+.hero-cue{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-bottom:14px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--bone-dim)}
+.hero-cue .track{width:54px;height:1px;background:var(--line);position:relative;overflow:hidden}
+.hero-cue .track i{position:absolute;inset:0;background:var(--bone);transform-origin:left;animation:cue 2.8s var(--ease-io) infinite}
+@keyframes cue{0%{transform:scaleX(0)}42%{transform:scaleX(1)}100%{transform:scaleX(1) translateX(100%)}}
+.chapters{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2.4vw,40px);border-top:1px solid var(--line);padding-top:18px}
+.chip{display:flex;gap:14px;align-items:flex-start}
+.chip .num{font-size:clamp(24px,2.3vw,34px);font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;transition:color .4s}
+.chip b{display:block;font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--bone);margin-bottom:6px}
+.chip p{margin:0;font-size:12px;line-height:1.5;color:#b9b6ab;max-width:24ch}
+.chip .tx{padding-top:3px;min-width:0}
+.chip:hover .num{color:var(--accent)}
+.arrowlink{display:inline-flex;align-items:center;gap:12px;margin-top:30px;font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase}
+.arrowlink .ar{width:36px;height:36px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;transition:background .45s var(--ease),border-color .45s}
+.arrowlink .ar svg{width:13px;height:13px;transition:transform .5s var(--ease-out)}
+.arrowlink:hover .ar{background:var(--bone);border-color:var(--bone)}
+.arrowlink:hover .ar svg{transform:translate3d(2px,-2px,0)}
+.arrowlink:hover .ar svg path{stroke:#06080b}
+
+/* sections */
+.sec{position:relative;padding:clamp(88px,15vh,190px) var(--pad)}
+.sec::before{content:'';position:absolute;inset:-22% -4%;z-index:-1;pointer-events:none;
+  background:radial-gradient(110% 62% at 30% 50%,rgba(4,6,9,.82),rgba(4,6,9,.56) 42%,rgba(4,6,9,.14) 74%,rgba(4,6,9,0));
+  -webkit-mask-image:linear-gradient(transparent,#000 44%);mask-image:linear-gradient(transparent,#000 44%)}
+.sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:clamp(30px,5vh,66px)}
+.sec-head .k{font-size:10px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--bone-dim)}
+.sec-head .k b{color:var(--accent);font-weight:500}
+#pathways::before,#flood::before{background:radial-gradient(90% 60% at 25% 28%,rgba(4,6,9,.55),rgba(4,6,9,.12) 70%,rgba(4,6,9,0))}
+.rule{flex:1 1 auto;height:1px;background:var(--line)}
+.gate-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:clamp(28px,5vw,90px);align-items:start}
+.gate-grid h2{max-width:12ch}
+.gate-copy .lead{font-size:clamp(15px,1.16vw,19px);line-height:1.66;color:#dedbd1;text-shadow:0 1px 20px rgba(3,6,8,.9);margin:0}
+.gate-copy .lead+p{margin-top:20px}
+.gate-stats{display:flex;gap:clamp(24px,4vw,62px);margin-top:clamp(30px,5vh,60px);border-top:1px solid var(--line);padding-top:24px;flex-wrap:wrap}
+.gate-stats b{display:block;font-size:clamp(22px,2.1vw,32px);font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.gate-stats span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--bone-dim)}
+
+/* live readout (chapter 2) */
+.readout{display:flex;flex-wrap:wrap;gap:clamp(18px,3vw,48px);margin:0 0 clamp(34px,6vh,70px);padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.readout div b{display:block;font-size:clamp(24px,2.6vw,40px);font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.readout div b.hot{color:var(--accent)}
+.readout div span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--bone-dim)}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.4vw,22px);align-items:start}
+.card:nth-child(2){transform:translateY(clamp(20px,3vw,44px))}
+.card:nth-child(3){transform:translateY(clamp(40px,6vw,88px))}
+.card-fr{position:relative;aspect-ratio:4/5;overflow:hidden;outline:1px solid var(--line);outline-offset:-1px;background:#10151a}
+.card-fr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.4s var(--ease-out)}
+.card:hover .card-fr img{transform:scale(1.05)}
+.card-fr::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 46%,rgba(4,6,9,.82));pointer-events:none}
+.card-lab{position:absolute;left:16px;right:16px;bottom:14px;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.card-lab b{font-size:clamp(13px,1.15vw,17px);font-weight:400;letter-spacing:.02em;text-transform:uppercase}
+.card-lab span{font-size:10px;letter-spacing:.2em;color:rgba(232,228,218,.7);text-transform:uppercase}
+.card-meta{display:flex;justify-content:space-between;margin-top:12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim)}
+.gap{height:clamp(120px,34vh,360px)}
+.note{margin-top:clamp(50px,6vw,90px);margin-bottom:clamp(30px,5vh,60px);font-size:11px;color:var(--bone-dim);letter-spacing:.04em;max-width:60ch}
+
+.cur-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.72fr);gap:clamp(28px,5vw,90px);align-items:end;margin-bottom:clamp(34px,6vh,72px)}
+.cur-head h2{max-width:13ch}
+.cur{border-top:1px solid var(--line)}
+.les{position:relative;display:grid;align-items:center;grid-template-columns:64px minmax(0,1.05fr) minmax(0,1.25fr) 120px;gap:clamp(14px,2.4vw,40px);padding:clamp(20px,2.4vw,30px) 0;border-bottom:1px solid var(--line);transition:padding .5s var(--ease-out)}
+.les:hover{padding-left:clamp(8px,1.2vw,18px)}
+.les .k{font-size:11px;letter-spacing:.16em;color:var(--bone-dim);font-variant-numeric:tabular-nums}
+.les:hover .k{color:var(--accent)}
+.les h3{font-size:clamp(16px,1.5vw,23px)}
+.les p{margin:0;font-size:13px;line-height:1.6;color:#c3c0b6;text-shadow:0 1px 16px rgba(3,6,8,.92)}
+.les .t{text-align:right;font-size:12px;letter-spacing:.1em;color:var(--bone);font-variant-numeric:tabular-nums}
+
+.fin{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.fin .eyebrow{margin-bottom:26px}
+.fin h2{font-size:clamp(36px,7vw,116px);line-height:.96;letter-spacing:-.03em;text-transform:uppercase}
+.fin p{max-width:46ch;margin:26px auto 0}
+.cta{position:relative;display:inline-flex;align-items:center;gap:14px;margin-top:44px;padding:17px 30px;border:1px solid var(--bone);border-radius:100px;overflow:hidden;font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;transition:color .45s var(--ease)}
+.cta i{position:absolute;inset:0;background:var(--bone);transform:translate3d(0,101%,0);transition:transform .62s var(--ease-out)}
+.cta span,.cta svg{position:relative;z-index:1}
+.cta:hover{color:#06080b}
+.cta:hover i{transform:none}
+.cta:hover svg path{stroke:#06080b}
+.cta.solid{background:var(--bone);color:#06080b}
+.cta.solid i{background:var(--accent-2)}
+
+.foot{position:relative;padding:clamp(50px,8vh,96px) var(--pad) clamp(26px,4vh,40px);border-top:1px solid var(--line-soft)}
+.foot::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(rgba(4,6,9,.6),rgba(4,6,9,.96) 40%,rgba(4,6,9,.98))}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,.6fr));gap:clamp(22px,4vw,60px)}
+.foot h4{margin:0 0 16px;font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.foot ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.foot li a{font-size:13px;color:#a4a69e;transition:color .35s}
+.foot li a:hover{color:var(--bone)}
+.foot-brand p{margin:16px 0 0;max-width:36ch;font-size:13px;color:#8d908a}
+.foot-base{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:clamp(38px,6vh,74px);padding-top:20px;border-top:1px solid var(--line-soft);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+
+.rail{position:fixed;right:calc(var(--pad) - 4px);top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:12px;align-items:center}
+.rail button{width:22px;height:10px;display:grid;place-items:center}
+.rail i{display:block;width:14px;height:1px;background:rgba(232,228,218,.3);transition:.5s var(--ease-out)}
+.rail button.on i{width:22px;background:var(--bone)}
+
+.skip{position:fixed;left:12px;top:-60px;z-index:200;background:var(--bone);color:#06080b;padding:10px 16px;border-radius:6px;font-size:13px}
+.skip:focus{top:12px}
+
+
+@media (max-width:1080px){
+  .hero-top{max-width:none}
+  .gate-grid,.cur-head{grid-template-columns:1fr;gap:22px}
+  .les{grid-template-columns:44px minmax(0,1fr) 96px}.les p{display:none}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:820px){
+  .nav-burger{display:block}
+  .nav-links{position:fixed;top:0;right:0;bottom:0;width:min(84vw,360px);padding:calc(var(--nav-h) + 28px) var(--pad) 34px;flex-direction:column;align-items:flex-start;gap:18px;background:rgba(4,6,9,.98);border-left:1px solid var(--line-soft);transform:translate3d(100%,0,0);visibility:hidden;transition:transform .6s var(--ease-out),visibility 0s linear .6s}
+  .menu-open .nav-links{transform:none;visibility:visible;transition:transform .6s var(--ease-out)}
+  .nav-link{font-size:13px}
+  .chapters{grid-template-columns:1fr 1fr;row-gap:22px}
+  .hero-sub{max-width:300px}
+  .cards{grid-template-columns:1fr}
+  .card:nth-child(n){transform:none}
+  .card-fr{aspect-ratio:16/10}
+  .note{margin-top:34px}
+  .rail{display:none}
+  .foot-grid{grid-template-columns:1fr}
+}
+@media (max-width:820px){.hero::before{height:78%;background:linear-gradient(rgba(3,6,9,.82),rgba(3,6,9,.55) 60%,transparent)}}
+@media (max-width:560px){.chip p{display:none}.chapters{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){
+  [data-rv],.mask-line>span{opacity:1!important;transform:none!important;transition:none!important}
+  .hero-cue .track i{animation:none}
+}
+</style>
+</head>
+<body class="no-js">
+<a class="skip" href="#gate">Skip to content</a>
+<div id="stage" aria-hidden="true">
+  <div class="layer" data-l="overview"><div class="frame"><img src="intro/img/overview.jpg" alt="" width="1280" height="715" fetchpriority="high">
+    <svg class="ov" viewBox="0 0 1280 715" preserveAspectRatio="none">
+      <g id="ov-crown"><circle class="pulse" cx="280" cy="297" r="22" fill="none" stroke="#ff4a3a" stroke-width="3"/><circle cx="280" cy="297" r="9" fill="#ff4a3a"/><path d="M262 285l36 24M298 285l-36 24" stroke="#fff" stroke-width="3"/><text x="310" y="292" font-size="22">Crown Bridge · CLOSED</text></g>
+      <g id="ov-kings"><circle class="pulse" cx="590" cy="375" r="22" fill="none" stroke="#ff9a2e" stroke-width="3"/><circle cx="590" cy="375" r="9" fill="#ff9a2e"/><text x="612" y="372" font-size="22">Kings Bridge · 142% full</text></g>
+      <g id="ov-tech"><circle cx="1040" cy="410" r="9" fill="#ffc94a"/><text x="1070" y="448" font-size="22" text-anchor="end">Tech Bridge · 67%</text></g>
+    </svg></div></div>
+  <div class="layer" data-l="flood"><div class="frame"><img src="intro/img/flood.jpg" alt="" width="1280" height="715">
+    <svg class="ov" viewBox="0 0 1280 715" preserveAspectRatio="none">
+      <g><circle class="pulse" cx="282" cy="295" r="22" fill="none" stroke="#4aa8ff" stroke-width="3"/><circle cx="282" cy="295" r="9" fill="#4aa8ff"/><text x="312" y="290" font-size="22">Crown Bridge · flooded</text></g>
+      <g><circle cx="592" cy="378" r="9" fill="#5ee08a"/><text x="614" y="375" font-size="22">Kings Bridge · open</text></g>
+      <g><circle class="pulse" cx="1044" cy="384" r="22" fill="none" stroke="#4aa8ff" stroke-width="3"/><circle cx="1044" cy="384" r="9" fill="#4aa8ff"/><text x="1070" y="424" font-size="22" text-anchor="end">Tech Bridge · flooded</text></g>
+    </svg></div></div>
+  <div class="layer" data-l="clock"><div class="frame"><img src="intro/img/clocktower.jpg" alt="" width="1280" height="715"></div></div>
+  <div class="layer" data-l="hospital"><div class="frame"><img src="intro/img/hospital.jpg" alt="" width="1280" height="715"></div></div>
+  <div class="layer" data-l="riverside"><div class="frame"><img src="intro/img/riverside.jpg" alt="" width="1280" height="715"></div></div>
+  <div class="layer" data-l="harbor"><div class="frame"><img src="intro/img/harbor.jpg" alt="" width="1280" height="715"></div></div>
+</div>
+<div id="grade"></div>
+<div id="vignette"></div>
+<div id="pre">
+  <div class="pre-in">
+    <div class="pre-mark"><svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><circle cx="22" cy="22" r="19" stroke="#e8e4da" stroke-width="1.2"/><path d="M4 28c8-6 10 4 18-2s10-6 18 0" stroke="#ff7a3c" stroke-width="1.6"/><path d="M10 22v-7M16 22V10M22 22v-5M28 22V12" stroke="#e8e4da" stroke-width="1.6"/></svg></div>
+    <div class="pre-name">Lumen Bay</div>
+    <div class="pre-bar"><i id="pre-fill"></i></div>
+    <div class="pre-meta"><span>Raising the city</span><b><span id="pre-pct">0</span>%</b></div>
+  </div>
+</div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="Lumen Bay, top of page">
+    <svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><circle cx="22" cy="22" r="19" stroke="#e8e4da" stroke-width="1.3"/><path d="M4 28c8-6 10 4 18-2s10-6 18 0" stroke="#ff7a3c" stroke-width="1.8"/><path d="M10 22v-7M16 22V10M22 22v-5M28 22V12" stroke="#e8e4da" stroke-width="1.6"/></svg>
+    <span class="brand-tx"><b>LUMEN BAY</b><i>CITYSIM NEXUS</i></span>
+  </a>
+  <nav class="nav-links" id="navlinks" aria-label="Page sections">
+    <a class="nav-link" href="#gate">The city</a>
+    <a class="nav-link" href="#pathways">What if</a>
+    <a class="nav-link" href="#flood">River flood</a>
+    <a class="nav-link" href="#lessons">How it works</a>
+    <a class="nav-open nav-link" href="index.html">Open the simulator</a>
+  </nav>
+  <button class="nav-burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="navlinks"><i></i><i></i></button>
+</header>
+
+<main class="page" id="top">
+
+<section class="hero" id="hero" data-cam="0">
+  <div class="hero-top">
+    <div class="eyebrow" data-rv="up"><span class="dot"></span> A city of 15,000 residents</div>
+    <h1 class="display h-hero">
+      <span class="mask-line"><span>Change one thing.</span></span>
+      <span class="mask-line"><span>Watch the city</span></span>
+      <span class="mask-line"><span>answer.</span></span>
+    </h1>
+    <p class="hero-sub body" data-rv="up">Lumen Bay is a living model: close a bridge, flood the river, cut the buses,
+      and the effects travel through traffic, jobs, money, health and fairness.</p>
+    <a class="arrowlink" href="index.html" data-rv="up"><span>Open the simulator</span>
+      <span class="ar"><svg viewBox="0 0 14 14" fill="none"><path d="M3 11 11 3M5 3h6v6" stroke="#e8e4da" stroke-width="1.3"/></svg></span></a>
+  </div>
+  <div class="hero-spacer"></div>
+  <div class="hero-foot">
+    <div class="hero-cue" data-rv="up"><span>Scroll to explore</span><span class="track"><i></i></span></div>
+    <div class="chapters">
+      <div class="chip" data-rv="up"><span class="num">01</span><span class="tx"><b>Roads</b><p>Close a bridge and traffic finds the next one.</p></span></div>
+      <div class="chip" data-rv="up"><span class="num">02</span><span class="tx"><b>Money</b><p>Every decision spends one shared budget.</p></span></div>
+      <div class="chip" data-rv="up"><span class="num">03</span><span class="tx"><b>People</b><p>Who gains and who loses, each counted once.</p></span></div>
+      <div class="chip" data-rv="up"><span class="num">04</span><span class="tx"><b>Confidence</b><p>Ten simulated cities, one honest verdict.</p></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="gate" data-cam="1">
+  <div class="sec-head" data-rv="up"><span class="k"><b>01</b> — The city</span><span class="rule"></span><span class="k">Lumen Bay</span></div>
+  <div class="gate-grid">
+    <h2 class="display h-sec" data-rv="up">One river. Three bridges. Eight districts.</h2>
+    <div class="gate-copy">
+      <p class="lead" data-rv="up">Lumen Bay is a port city with a glass business district, an old quarter around a clock
+        tower, a harbour of cranes, and a river that only three bridges cross. That is what makes it fragile, and what makes it
+        worth simulating.</p>
+      <p class="body" data-rv="up">Every one of its 15,000 residents is modelled: where they live, how they choose to get to work,
+        and what a closed road does to their morning. The simulator runs on the same layout of districts, roads and bridges.</p>
+      <a class="arrowlink" href="#pathways" data-rv="up"><span>See what happens when a bridge closes</span>
+        <span class="ar"><svg viewBox="0 0 14 14" fill="none"><path d="M3 11 11 3M5 3h6v6" stroke="#e8e4da" stroke-width="1.3"/></svg></span></a>
+    </div>
+  </div>
+  <div class="cards">
+    <article class="card" data-rv="up"><div class="card-fr"><img src="intro/img/street.jpg" alt="Old Town street with cafes and balconies at golden hour" loading="lazy" width="1280" height="715"><div class="card-lab"><b>Old Town</b></div></div><div class="card-meta"><span>Cafe streets</span><span>01 / 03</span></div></article>
+    <article class="card" data-rv="up"><div class="card-fr"><img src="intro/img/hillcrest.jpg" alt="Hillcrest villas among trees above the city" loading="lazy" width="1280" height="715"><div class="card-lab"><b>Hillcrest</b></div></div><div class="card-meta"><span>Villas and parks</span><span>02 / 03</span></div></article>
+    <article class="card" data-rv="up"><div class="card-fr"><img src="intro/img/riverside.jpg" alt="Riverside terrace of stone apartment buildings above the water" loading="lazy" width="1280" height="715"><div class="card-lab"><b>Riverside</b></div></div><div class="card-meta"><span>The river bend</span><span>03 / 03</span></div></article>
+  </div>
+  <div class="gate-stats" data-rv="up">
+    <div><b>8</b><span>Districts</span></div>
+    <div><b>11</b><span>Roads</span></div>
+    <div><b>15,000</b><span>Residents</span></div>
+    <div><b>14</b><span>Days projected</span></div>
+  </div>
+</section>
+
+<section class="sec" id="pathways" data-cam="2">
+  <div class="sec-head" data-rv="up"><span class="k"><b>02</b> — What if</span><span class="rule"></span><span class="k">Bridge closed</span></div>
+  <div class="cur-head">
+    <h2 class="display h-sec" data-rv="up">Close Crown Bridge and Kings Bridge fills to 142%.</h2>
+    <p class="body-lg" data-rv="up">The markers on the photograph show what the model decides: Crown Bridge is closed, so its traffic
+      is gone and Kings Bridge takes it. The figures come from the simulator.</p>
+  </div>
+  <div class="gap" aria-hidden="true"></div>
+  <div class="readout" data-rv="up">
+    <div><b class="hot">142%</b><span>Kings Bridge load</span></div>
+    <div><b>6.5%</b><span>Cannot reach work</span></div>
+    <div><b>20.6%</b><span>Arrive late</span></div>
+    <div><b>−11k</b><span>Budget per day</span></div>
+  </div>
+</section>
+
+<section class="sec" id="flood" data-cam="3">
+  <div class="sec-head" data-rv="up"><span class="k"><b>03</b> — River flood</span><span class="rule"></span><span class="k">Flooded</span></div>
+  <div class="cur-head">
+    <h2 class="display h-sec" data-rv="up">When the river rises, two of three bridges go under.</h2>
+    <p class="body-lg" data-rv="up">Four of Lumen Bay's eleven roads are flood-prone, including Crown Bridge and Tech Bridge.
+      In the flood scenario they drop out and the simulator counts what that costs.</p>
+  </div>
+  <div class="gap" aria-hidden="true"></div>
+  <div class="readout" data-rv="up">
+    <div><b class="hot">4 of 11</b><span>Roads flood-prone</span></div>
+    <div><b>2 of 3</b><span>Bridges underwater</span></div>
+    <div><b>2,947k</b><span>Harm if nothing is done</span></div>
+  </div>
+</section>
+
+<section class="sec" id="lessons" data-cam="4">
+  <div class="sec-head" data-rv="up"><span class="k"><b>04</b> — How it works</span><span class="rule"></span><span class="k">The chain</span></div>
+  <div class="cur-head">
+    <h2 class="display h-sec" data-rv="up">One change. Five links. Each caused by the one before.</h2>
+    <p class="body-lg" data-rv="up">The simulator shows every step of the chain, so you can ask “why did this happen?” and get a
+      calculated answer. With a bridge closed, the hospital becomes harder to reach.</p>
+  </div>
+  <div class="cur">
+    <div class="les"><span class="k">01</span><h3>Roads</h3><p>Closed or flooded roads lose their traffic; the rest slow down as they fill up.</p><span class="t">142% load</span></div>
+    <div class="les"><span class="k">02</span><h3>Choices</h3><p>People re-decide how to travel: car, bus or work from home, from time and cost.</p><span class="t">6.5% no route</span></div>
+    <div class="les"><span class="k">03</span><h3>Jobs and output</h3><p>Late and stranded workers cost the city output, and shops lose customers.</p><span class="t">1,132k a day</span></div>
+    <div class="les"><span class="k">04</span><h3>Budget</h3><p>Lower income and extra costs push the budget negative, which triggers austerity.</p><span class="t">−11k a day</span></div>
+    <div class="les"><span class="k">05</span><h3>People</h3><p>Austerity cuts buses, so the commute gets worse again. The ledger counts who ends up better or worse off.</p><span class="t">hospital access 67.7%</span></div>
+  </div>
+</section>
+
+<section class="sec fin" id="eternity" data-cam="5">
+  <div class="eyebrow" data-rv="up">Your turn</div>
+  <h2 data-rv="up">Ask the city</h2>
+  <p class="body-lg" data-rv="up">Pick a problem, try a response, and see who gains and who loses, with a range
+    showing how sure the model is. It runs in your browser with nothing to install.</p>
+  <a class="cta solid" href="index.html" data-rv="up"><i></i><span>Open the simulator</span>
+    <svg viewBox="0 0 14 14" fill="none" width="13" height="13"><path d="M3 11 11 3M5 3h6v6" stroke="currentColor" stroke-width="1.3"/></svg></a>
+</section>
+
+<footer class="foot" data-cam="6">
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <strong style="font-weight:500;letter-spacing:.26em;font-size:12px">LUMEN BAY</strong>
+      <p>A digital twin of Lumen Bay for exploring urban systems and policy outcomes.</p>
+    </div>
+    <div><h4>This page</h4><ul>
+      <li><a href="#gate">The city</a></li><li><a href="#pathways">What if</a></li><li><a href="#flood">River flood</a></li><li><a href="#lessons">How it works</a></li></ul></div>
+    <div><h4>Simulator</h4><ul>
+      <li><a href="index.html">Open the simulator</a></li>
+      <li><a href="https://github.com/kanishkamehta648-cmd/-Fictional-City-Simulator">Source code</a></li></ul></div>
+    <div><h4>Credits</h4><ul>
+      <li>Designed and developed by the LumenBay team.</li>
+      <li>Inspired by Kage (MIT License).</li>
+      <li>Typography: Onest.</li>
+      <li>Built for smarter, more sustainable urban planning.</li>
+    </ul></div>
+  </div>
+  <div class="foot-base"><span>© 2026 LumenBay. All rights reserved.</span></div>
+</footer>
+
+</main>
+<nav class="rail" id="rail" aria-label="Progress"></nav>
+
+<script src="intro/intro.js"></script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Bay CitySim</title>
+<style>
+  :root {
+    --bg: #f4f7fb; --card: #ffffff; --text: #1c2736; --muted: #46566b;
+    --border: #d8e0ea; --accent: #2367a5; --good: #167347; --bad: #b93832;
+    --water: #b8d9f0; --water-text: #456b8a; --road-closed: #707c89;
+    --chip: #edf2f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111923; --card: #1a2634; --text: #edf3fa; --muted: #bdc9d6;
+      --border: #344457; --accent: #7ab9f3; --good: #58d49a; --bad: #ff887d;
+      --water: #244763; --water-text: #a6c8e3; --road-closed: #8493a3;
+      --chip: #243345;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 18px 24px 6px; }
+  header h1 { margin: 0; font-size: 24px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  main { padding: 6px 24px 28px; }
+  .panel-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 1000px) { main { padding: 6px 14px 24px; } .panel-grid { grid-template-columns: minmax(0, 1fr); } }
+  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .card { min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 16px; }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .map-mode { padding: 5px 10px; white-space: nowrap; }
+  .hint { color: var(--muted); font-size: 13px; }
+
+  /* interactive miniature city */
+  #city-3d { position: relative; width: 100%; height: clamp(440px, 58vw, 680px); overflow: hidden;
+    border-radius: 10px; background: linear-gradient(#a7dcf3, #e1f3fc 72%, #84bb70); box-shadow: inset 0 0 0 1px var(--border); }
+  #city-3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  #city-3d:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .city-controls { position: absolute; right: 12px; top: 12px; z-index: 1; display: flex; gap: 8px; }
+  .city-controls button { background: rgba(255,255,255,.92); color: #172435; border-color: rgba(28,39,54,.22); }
+  .city-help { position: absolute; left: 12px; bottom: 12px; z-index: 1; margin: 0; padding: 6px 10px;
+    border-radius: 7px; color: #f9fbff; background: rgba(20,35,48,.78); font-size: 12px; pointer-events: none; }
+  .city-status { position: absolute; left: 12px; top: 12px; z-index: 1; padding: 6px 10px;
+    border-radius: 7px; color: #f9fbff; background: rgba(20,35,48,.78); font-size: 13px; }
+  .city-map-key { margin: 10px 0 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px;
+    background: var(--chip); color: var(--text); }
+  .city-map-key strong { font-size: 13px; }
+  .city-map-key-items { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 5px; }
+  .map-key-item { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
+  .map-key-swatch { display: inline-block; flex: none; width: 18px; height: 12px; border-radius: 3px; border: 1px solid rgba(20,35,48,.22); }
+  .map-key-road { background: linear-gradient(180deg, #454b50 0 40%, #31a857 40% 62%, #454b50 62%); }
+  .map-key-river { background: #167eae; border-color: #b7d8e6; }
+  .map-key-path { background: #e6d9bb; }
+  .map-key-park { background: #72a94f; }
+  .map-compat { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; clip-path: inset(50%); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .grad { width: 110px; height: 8px; border-radius: 4px;
+    background: linear-gradient(90deg, hsl(130,70%,45%), hsl(65,70%,45%), hsl(0,70%,45%)); }
+  .swatch { display: inline-block; width: 16px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 4px; }
+
+  /* controls */
+  .slider-row { display: grid; grid-template-columns: 118px 1fr 150px; gap: 10px; align-items: center; margin: 6px 0; }
+  .slider-row label { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .slider-row output { color: var(--muted); font-size: 13px; text-align: right; }
+  @media (max-width: 480px) { .slider-row, .slider-row[style] { grid-template-columns: minmax(0, 1fr) auto !important; row-gap: 0; }
+    .slider-row input { grid-column: 1 / -1; grid-row: 2; } .slider-row output { min-width: 0; } }
+  input[type=range] { width: 100%; min-height: 24px; accent-color: var(--accent); }
+  input[type=checkbox] { flex: none; width: 24px; height: 24px; margin: 2px 4px 2px 0; }
+  select { min-height: 40px; max-width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text); font: inherit; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  button { font: inherit; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--chip); color: var(--text); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button[aria-pressed=true] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.ghost { background: transparent; }
+
+  /* metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .metric, .kpi { background: var(--chip); border-radius: 10px; padding: 10px 12px; }
+  .kpi .lbl, .metric .lbl { color: var(--muted); font-size: 13px; }
+  .kpi .val, .metric .val { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .kpi .val small, .metric .val small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+  .kpi .dlt, .metric .dlt { font-size: 12px; min-height: 17px; }
+  .kpi .sub, .metric .sub { font-size: 11px; color: var(--muted); }
+  .up-bad, .down-bad { color: var(--bad); } .up-good, .down-good { color: var(--good); }
+  .flat { color: var(--muted); }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  td.bad { color: var(--bad); font-weight: 600; } td.good { color: var(--good); }
+
+  /* why */
+  #why { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  #why li { display: grid; grid-template-columns: 92px 1fr; gap: 10px; }
+  #why .tag { background: var(--chip); border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 600;
+    height: fit-content; text-align: center; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  /* Policy Impact Ledger */
+  .lbar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: var(--chip); margin: 8px 0 4px; }
+  .lbar span { display: block; height: 100%; }
+  .lbar .b { background: var(--good); } .lbar .w { background: var(--bad); } .lbar .u { background: #9aa6b2; }
+  .lnums { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; }
+  .lnums b { font-size: 20px; }
+  .lnums .g { color: var(--good); } .lnums .r { color: var(--bad); } .lnums .m { color: var(--muted); }
+  .seg { display: inline-flex; gap: 0; }
+  .seg button { border-radius: 0; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button[aria-pressed=true] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button[aria-pressed=true], .seg button[aria-pressed=true] { color: #0b1520; } }
+  table.ledger th { text-align: left; }
+  table.ledger td:first-child { white-space: nowrap; font-weight: 600; vertical-align: top; }
+  table.ledger td { text-align: left; vertical-align: top; }
+  table.ledger td small { color: var(--muted); display: block; }
+  .tag-bad { color: var(--bad); font-weight: 600; } .tag-warn { color: #8a5a00; font-weight: 600; }
+
+  .mgroup { grid-column: 1 / -1; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); margin-top: 6px; }
+  .mgroup:first-child { margin-top: 0; }
+  tr.strong td { font-weight: 700; border-top: 1px solid var(--muted); }
+  .chart { width: 100%; height: auto; display: block; margin-top: 6px; }
+  .chart .zero { stroke: var(--muted); stroke-width: 0.6; stroke-dasharray: 2 2; }
+  .chart .ln-now { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .chart .ln-base { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .chart .ax { fill: var(--muted); font-size: 9px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+
+  .event-line { margin: 10px 0 0; font-size: 13px; }
+  #resp-line { margin-top: 2px; color: var(--muted); }
+  .wide { margin: 0; }
+  .cmp-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cmp-controls label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .cmp-controls input[type=range] { width: min(200px, 100%); }
+  .cmp-controls label { max-width: 100%; }
+  progress { width: 220px; height: 10px; accent-color: var(--accent); }
+  table.cmp td, table.cmp th { vertical-align: top; }
+  table.cmp td:nth-child(2), table.cmp th:nth-child(2) { text-align: left; min-width: 190px; }
+  table.cmp td:nth-child(10), table.cmp th:nth-child(10) { text-align: left; min-width: 150px; }
+  table.cmp td:nth-child(6), table.cmp td:nth-child(7) { white-space: nowrap; }
+  tr.best td { background: color-mix(in srgb, var(--good) 12%, transparent); }
+  .badge { background: var(--good); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+  .bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--accent); vertical-align: middle; }
+  .banner { background: color-mix(in srgb, var(--bad) 14%, transparent); border: 1px solid var(--bad); border-radius: 8px;
+    padding: 8px 12px; margin: 0 0 10px; }
+  #cmp-explain h3 { font-size: 14px; margin: 16px 0 6px; }
+  ul.singles { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .shuttle-line { stroke-width: 0.8; stroke-linecap: round; pointer-events: none; }
+
+  /* Day 5: summary, timeline, area detail, grouped controls */
+  .summary { margin: 0 24px 4px; }
+  @media (max-width: 1000px) { .summary { margin: 0 14px 4px; } }
+  .summary .headline { font-size: 17px; font-weight: 650; margin: 0 0 8px; }
+  .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+  .chip { background: var(--chip); border-radius: 10px; padding: 8px 12px; border-left: 4px solid var(--border); }
+  .chip .k { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .chip .v { font-size: 15px; font-weight: 650; }
+  .chip .s { font-size: 12px; color: var(--muted); }
+  .chip.ok { border-left-color: var(--good); } .chip.warn { border-left-color: #d98e04; } .chip.bad { border-left-color: var(--bad); }
+  .chip .st { font-size: 11px; font-weight: 700; float: right; }
+  .chip.ok .st { color: var(--good); } .chip.warn .st { color: #8a5a00; } .chip.bad .st { color: var(--bad); }
+  @media (prefers-color-scheme: dark) { .chip.warn .st, .tag-warn { color: #f0c060; } }
+  .next { margin: 10px 0 0; font-size: 13px; }
+
+  .tl-head { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .tl-head b { font-size: 13px; }
+  #timeline { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; margin-top: 3px; }
+  #timeline button { padding: 3px 0 4px; border-radius: 6px; font-size: 11px; line-height: 1.25; text-align: center;
+    background: var(--chip); border: 2px solid transparent; min-width: 0; }
+  #timeline button .d { color: var(--muted); font-size: 10px; }
+  #timeline button .c { font-weight: 700; font-size: 12px; }
+  #timeline button .r { font-size: 10px; }
+  #timeline button[aria-pressed=true] { background: var(--chip); color: var(--text); }
+  #timeline button.sel { border-color: var(--accent); }
+  #timeline button.over { border-style: dashed; font-style: italic; }
+  #timeline .tl-bars { display: block; height: 4px; margin: 2px 3px 0; border-radius: 2px; }
+  .k-f { color: #1f6aa8; } .k-h { color: #a84a0a; } .k-s { color: #7a43b5; } .k-c { color: var(--muted); }
+  @media (prefers-color-scheme: dark) { .k-f { color: #6fb1f0; } .k-h { color: #f0a060; } .k-s { color: #c3a0ee; } }
+  .tl-key { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .evbars { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; margin-top: 3px; }
+  .evbars i { height: 5px; border-radius: 3px; background: var(--chip); }
+  .evbars i.f { background: #3d8fd1; } .evbars i.h { background: #e0742b; } .evbars i.s { background: #8e5bc4; } .evbars i.c { background: #7b8794; }
+  #evbars { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+  @media (max-width: 560px) { #timeline button .r { display: none; } }
+  @media (max-width: 400px) { #timeline { gap: 2px; } #timeline button { border-width: 1px; overflow: hidden; } #timeline button .c { font-size: 10px; } #timeline button .d { font-size: 9px; } }
+
+  .flood-wash { fill: #3d8fd1; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .flood-wash.on { opacity: 0.22; }
+  .heat-wash { fill: #e0742b; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+  .heat-wash.on { opacity: 0.13; }
+  .river.high { stroke: #6fb0e6; stroke-width: 9; }
+  .node-g { cursor: pointer; }
+  .node-g:focus { outline: none; }
+  .node-g:focus-visible .node-dot, .node-g.sel .node-dot { stroke: var(--accent); stroke-width: 1.1; }
+  .badge-lbl { font-size: 2px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+  #area-detail { margin-top: 10px; font-size: 13px; }
+  #area-detail h3 { font-size: 14px; margin: 0 0 4px; }
+  #area-detail .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px 14px; }
+  #area-detail .grid div span { display: block; color: var(--muted); font-size: 11px; }
+  .control-stack { display: flex; flex-direction: column; gap: 12px; }
+  .control-section { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: color-mix(in srgb, var(--chip) 28%, var(--card)); }
+  .ctl-group { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+  .ctl-help { margin: 3px 0 8px; color: var(--muted); font-size: 13px; }
+  .control-section .btns { margin-top: 8px; }
+  .control-section .ctl-help + .btns, .control-section .ctl-help + #sliders { margin-top: 0; }
+  #sliders .slider-row { grid-template-columns: minmax(100px, 0.8fr) minmax(80px, 1fr) minmax(130px, 1fr); gap: 8px; margin: 10px 0 0; }
+  #sliders .slider-row:first-child { margin-top: 0; }
+  #sliders .slider-row output { font-size: 12px; }
+  #route-from, #route-to { flex: 1 1 145px; }
+  .route-connector { align-self: center; }
+  .route-list { margin: 8px 0 0; }
+  .route-list li { padding: 6px 0; border-top: 1px solid var(--border); }
+  .route-list li span { flex: 1 1 180px; }
+  .scenario-actions button { flex: 1 1 135px; }
+  .control-section .slider-row { grid-template-columns: minmax(100px, 0.7fr) minmax(80px, 1fr) minmax(135px, 1fr); }
+  .control-section .check { margin-top: 10px; }
+  .ctl-status { margin: 8px 0 0; padding: 8px 10px; border-radius: 7px; background: var(--card); }
+  .ctl-status:empty { display: none; }
+  @media (max-width: 480px) {
+    #sliders .slider-row, .control-section .slider-row { grid-template-columns: minmax(0, 1fr) auto; }
+  }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[disabled] { opacity: 0.5; cursor: default; }
+  .sr { position: absolute; left: -9999px; }
+  .panel-wide { margin: 0 24px 24px; }
+  @media (max-width: 1000px) { .panel-wide { margin: 0 14px 24px; } }
+  .assump-group { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .assump-group summary { cursor: pointer; font-weight: 600; }
+  table.assump th:nth-child(2), table.assump td:nth-child(2), table.assump th:nth-child(3), table.assump td:nth-child(3) { text-align: left; }
+  table.assump td:nth-child(2) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.assump td:nth-child(3) { color: var(--muted); }
+  @media (max-width: 640px) {   /* phone: one small block per setting instead of three squeezed columns */
+    table.assump thead { display: none; }
+    table.assump, table.assump tbody, table.assump tr, table.assump td { display: block; width: 100%; }
+    table.assump tr { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    table.assump td { border: 0; padding: 1px 0; }
+    table.assump td:first-child { font-weight: 600; }
+    table.assump td:nth-child(2) { white-space: normal; font-size: 15px; }
+  }
+  .city-menu { margin-top: 8px; font-size: 13px; }
+  .city-menu summary { cursor: pointer; color: var(--accent); width: fit-content; }
+  .city-menu-body { margin-top: 6px; max-width: 760px; }
+  .city-msg { margin-top: 8px; font-size: 13px; }
+  .city-msg:empty { display: none; }
+  .city-msg ul { margin: 4px 0 0; padding-left: 20px; }
+  .city-msg.bad { border-left: 4px solid var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); padding: 6px 10px; border-radius: 6px; }
+  .city-msg.ok { border-left: 4px solid var(--good); background: color-mix(in srgb, var(--good) 10%, transparent); padding: 6px 10px; border-radius: 6px; }
+  .city-msg.warn { border-left: 4px solid #d98e04; background: color-mix(in srgb, #d98e04 10%, transparent); padding: 6px 10px; border-radius: 6px; }
+
+  /* tabs */
+  .tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 8px 24px 0; margin-top: 12px;
+    background: var(--bg); border-bottom: 1px solid var(--border); }
+  @media (max-width: 1000px) { .tabs { padding: 8px 14px 0; } }
+  .tablist { display: flex; gap: 4px; width: 100%; }
+  .tabs button { flex: 0 1 auto; border: 0; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; background: transparent;
+    padding: 9px 16px; font-weight: 600; color: var(--muted); }
+  .tabs button:hover { color: var(--text); background: var(--chip); }
+  .tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); background: var(--card); }
+  @media (max-width: 560px) { .tabs button { flex: 1; padding: 9px 4px; } }
+  .saved { margin: 8px 0; } .saved summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  .saved-list { list-style: none; margin: 6px 0; padding: 0; font-size: 13px; }
+  .saved-list li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--border); }
+  .saved-list .nm { flex: 1 1 260px; } .saved-list .nm small { display: block; color: var(--muted); }
+  #cmp-rec .rec { background: var(--chip); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+  #cmp-rec .rec h3 { margin: 0 0 4px; font-size: 14px; } #cmp-rec .rec p { margin: 4px 0; } #cmp-rec .rec ul { margin: 4px 0 4px 18px; padding: 0; }
+  #cmp-sens { margin: 10px 0; } #cmp-sens td.win { font-weight: 700; color: var(--good); } #cmp-sens .conf { margin: 8px 0; }
+  .route-list { margin: 4px 0 8px; padding: 0; list-style: none; font-size: 13px; }
+  .route-list li { display: flex; gap: 8px; align-items: center; margin: 3px 0; }
+  .guide { margin: 4px 0 12px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .guide b { color: var(--text); }
+  button.small { padding: 3px 9px; font-size: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  details.all-metrics { margin-top: 12px; }
+  details.all-metrics summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  details.all-metrics .metrics { margin-top: 10px; }
+  .sum-actions { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-top: 10px; }
+  .sum-actions p { margin: 0; }
+  .range-row { margin: 0; font-size: 13px; }
+  .sum-range { margin: 8px 0 0; font-size: 13px; }
+  .sum-range:empty { display: none; }
+  @media (max-width: 560px) {
+    .chips { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .chip { padding: 6px 9px; }
+    .chip .v { font-size: 13px; } .chip .s { font-size: 11px; }
+    .summary .headline { font-size: 15px; }
+  }
+  #sum-range b { font-weight: 650; }
+  #sum-range .rg { color: var(--muted); }
+  .chart .band { fill: var(--accent); opacity: 0.16; stroke: none; }
+  .conf { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--chip); }
+  .conf.ok { border-left: 4px solid var(--good); } .conf.close { border-left: 4px solid #d98e04; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="city-title">Lumen Bay</span> <span class="hint">City Simulator</span></h1>
+  <p id="intro"></p>
+  <details class="city-menu">
+    <summary id="city-menu-label">City: Lumen Bay</summary>
+    <div class="city-menu-body">
+      <p class="hint">The simulator runs any city described in a city file. Download this city’s file to see the format, change it, and load it back.</p>
+      <div class="btns" style="margin-top:6px">
+        <button type="button" id="btn-city-load">Load a city file…</button>
+        <button type="button" id="btn-city-example">Try the example city</button>
+        <button type="button" id="btn-city-download" class="ghost">Download this city’s file</button>
+        <button type="button" id="btn-city-builtin" class="ghost" hidden>Back to Lumen Bay</button>
+        <input type="file" id="city-file" accept=".json,application/json" hidden>
+      </div>
+      <div id="city-msg" class="city-msg" role="status" aria-live="polite"></div>
+    </div>
+  </details>
+</header>
+
+<section class="card summary" id="summary" aria-live="polite">
+  <p class="headline" id="sum-head"></p>
+  <div class="chips" id="sum-chips"></div>
+  <div class="sum-actions">
+    <p class="next" id="sum-next"></p>
+    <p class="range-row"><button type="button" id="btn-range" title="Re-runs this scenario in 10 simulated cities that differ in who lives and works where">Check across 10 cities</button></p>
+  </div>
+  <p class="sum-range" id="sum-range" role="status"></p>
+</section>
+
+<nav class="tabs" aria-label="Views"><div class="tablist" role="tablist" aria-label="Views">
+  <button type="button" role="tab" id="tab-city" data-tab="city" aria-controls="panel-city" aria-selected="true">City</button>
+  <button type="button" role="tab" id="tab-impact" data-tab="impact" aria-controls="panel-impact" aria-selected="false" tabindex="-1">Impact</button>
+  <button type="button" role="tab" id="tab-respond" data-tab="respond" aria-controls="panel-respond" aria-selected="false" tabindex="-1">Respond</button>
+  <button type="button" role="tab" id="tab-details" data-tab="details" aria-controls="panel-details" aria-selected="false" tabindex="-1">Details</button>
+</div>
+</nav>
+
+<main>
+  <!-- CITY: the map and the things to change -->
+  <div role="tabpanel" id="panel-city" aria-labelledby="tab-city">
+    <p class="guide"><b>Start here:</b> adjust a route, choose an event, or click a road in the city. Then
+      <button type="button" class="small" data-goto="impact">See why it happened &rarr;</button>
+      <button type="button" class="small" data-goto="respond">Compare responses &rarr;</button></p>
+    <div class="panel-grid">
+      <section class="card">
+        <div class="card-head"><h2>City in motion</h2>
+          <span class="hint">Explore the miniature city. Click a road to close or reopen it; click a district for details.</span>
+          <button type="button" id="btn-export-city" title="Download the city as an editable 3D GLB model">Download 3D city</button>
+        </div>
+        <div id="city-3d" role="application" aria-label="Interactive 3D miniature city; drag to orbit and scroll to zoom" tabindex="0">
+          <div class="city-status" id="city-scene-status" role="status">Building city scene...</div>
+          <p class="city-help">Drag to orbit · Scroll to zoom · Click roads and districts</p>
+        </div>
+        <div class="map-compat" aria-hidden="true"><svg id="map" viewBox="0 0 100 100"></svg></div>
+        <div id="area-detail" class="hint">Click a district in the city for its details.</div>
+        <div class="city-map-key" aria-label="3D city map key">
+          <strong>City map key</strong>
+          <div class="city-map-key-items">
+            <span class="map-key-item"><i class="map-key-swatch map-key-road"></i>Road; center color shows traffic from green to red</span>
+            <span class="map-key-item"><i class="map-key-swatch map-key-river"></i>River and floodwater</span>
+            <span class="map-key-item"><i class="map-key-swatch map-key-path"></i>Sidewalks and paths</span>
+            <span class="map-key-item"><i class="map-key-swatch map-key-park"></i>Park and planted ground</span>
+            <span class="map-key-item"><span class="swatch" style="border-color:#2367a5"></span>Transit route</span>
+            <span id="bus-legend"></span>
+            <span id="shuttle-legend"></span>
+          </div>
+        </div>
+        <div class="tl-head">
+          <button id="btn-play" aria-label="Play the 14 days">&#9654; Play</button>
+          <b id="tl-title">The 14 days</b><span class="hint" id="tl-note">click a day to jump to it</span>
+        </div>
+        <div id="evbars" aria-hidden="true"></div>
+        <div id="timeline" role="group" aria-label="Days of the scenario"></div>
+        <div class="tl-key">Each day: average commute (min) and reserve (k). Bar colours: <b class="k-f">flood</b>, <b class="k-h">heatwave</b>, <b class="k-s">strike</b>, <b class="k-c">closures</b>.</div>
+      </section>
+
+      <section class="card">
+        <h2>Controls</h2>
+        <div class="control-stack">
+          <section class="control-section">
+            <h3 class="ctl-group">Bus frequency</h3>
+            <p class="ctl-help">Choose how often each route runs. Less frequent buses mean longer waits.</p>
+            <div id="sliders"></div>
+          </section>
+          <section class="control-section">
+            <h3 class="ctl-group">Temporary events</h3>
+            <p class="ctl-help">Disruptions end after their stated duration; select an event again to turn it off.</p>
+            <div class="btns">
+              <button id="btn-strike" aria-pressed="false" title="Buses almost stop for 5 days">Transit strike</button>
+              <button id="btn-crown" aria-pressed="false" title="Closes the city’s biggest bridge">Close the main bridge</button>
+              <button id="btn-flood" aria-pressed="false" title="Floods low roads, cuts water supply, leaves a repair bill">River flood</button>
+              <button id="btn-heat" aria-pressed="false" title="Power demand up, walking down, for 4 days">Heatwave</button>
+              <button id="btn-surprise" title="Picks one or two events at random">Surprise me</button>
+            </div>
+          </section>
+          <div id="svc-controls" class="control-section" hidden>
+            <h3 class="ctl-group">Hospitals and schools</h3>
+            <p class="ctl-help">Take a facility out of action or add places at the selected building.</p>
+            <div class="btns">
+              <select id="svc-select" aria-label="Choose a hospital or school"></select>
+              <button id="btn-svc" aria-pressed="false">Take out of action</button>
+            </div>
+            <div class="btns">
+              <select id="svc-boost" aria-label="How many more places">
+                <option value="0.25">Add 25% places</option><option value="0.5" selected>Add 50% places</option><option value="1">Add 100% places</option>
+              </select>
+              <button id="btn-boost" aria-pressed="false" title="A policy: more beds or classrooms at the chosen building. A building that is over 115% full turns people away.">Raise capacity</button>
+            </div>
+            <p class="note" id="boost-note"></p>
+          </div>
+          <section class="control-section">
+            <h3 class="ctl-group">Add a bus route</h3>
+            <p class="ctl-help">A lasting policy: connect two districts with a new bus line.</p>
+            <div class="btns">
+              <select id="route-from" aria-label="New route starts at"></select>
+              <span class="hint route-connector" aria-hidden="true">&rarr;</span>
+              <select id="route-to" aria-label="New route ends at"></select>
+              <button id="btn-route">Add route</button>
+            </div>
+            <ul class="route-list" id="route-list" aria-label="New bus routes"></ul>
+          </section>
+          <section class="control-section">
+            <h3 class="ctl-group">Long-term bus policy</h3>
+            <p class="ctl-help">This service cut stays in place for the whole scenario.</p>
+            <div class="btns">
+              <button id="btn-cut" title="A policy: lasts the whole 14 days">Reduce bus service by 30%</button>
+            </div>
+          </section>
+          <section class="control-section">
+            <h3 class="ctl-group">Scenario actions</h3>
+            <p class="ctl-help">Save, share, reset, or compare the current scenario.</p>
+            <div class="btns scenario-actions">
+              <button id="btn-reset" class="ghost">Reset city</button>
+              <button id="btn-baseline" class="ghost" title="Compare future changes against what is on screen now">Set current scenario as baseline</button>
+              <button id="btn-link" class="ghost" title="Copies a link that reopens this exact scenario">Copy scenario link</button>
+              <button id="btn-undo" class="ghost" title="Go back one change" disabled>Undo last change</button>
+              <button id="btn-save" class="ghost" title="Keeps this scenario in this browser so you can reopen it later">Save experiment</button>
+              <button id="btn-report" class="ghost" title="Downloads a printable report of this scenario: outcomes, who gains and loses, costs, assumptions">Download report</button>
+              <button id="btn-goto-compare">Compare responses &rarr;</button>
+            </div>
+            <span class="hint" id="link-note" role="status"></span>
+            <details class="saved" id="saved-card"><summary>Saved experiments <span class="hint" id="saved-count"></span></summary>
+              <p class="hint" id="saved-empty">Nothing saved yet. Press <b>Save experiment</b> to keep a scenario in this browser.</p>
+              <ul class="saved-list" id="saved-list"></ul>
+            </details>
+          </section>
+          <section class="control-section">
+            <h3 class="ctl-group">Scenario status</h3>
+            <p class="event-line ctl-status" id="event-line"></p>
+            <p class="event-line ctl-status" id="policy-line"></p>
+            <p class="event-line ctl-status" id="resp-line"></p>
+          </section>
+          <section class="control-section">
+            <h3 class="ctl-group">Simulation timeline</h3>
+            <p class="ctl-help">Choose a day to inspect; temporary events fade as they approach their end.</p>
+            <div class="slider-row">
+              <label for="view-day">Day shown</label>
+              <input type="range" id="view-day" min="1" max="14" step="1" value="1">
+              <output id="view-day-out"></output>
+            </div>
+            <button id="btn-clear-resp" class="ghost" style="display:none">Clear responses</button>
+            <label class="check"><input type="checkbox" id="chk-austerity">
+              <span>When the reserve runs out, reduce bus service by 10% each day (saves money, increases wait times)</span></label>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- IMPACT: what happened and why -->
+  <div role="tabpanel" id="panel-impact" aria-labelledby="tab-impact" hidden>
+    <section class="card" id="ledger-card" style="margin-bottom:16px">
+      <div class="card-head"><h2>Policy Impact Ledger</h2><span class="hint">every resident is counted once: better off, worse off or unchanged</span></div>
+      <div class="seg" role="group" aria-label="What to compare with" id="ledger-mode">
+        <button type="button" id="lm-base" aria-pressed="true">Compared with the normal city</button>
+        <button type="button" id="lm-nothing" aria-pressed="false" hidden>Response compared with doing nothing</button>
+      </div>
+      <div id="ledger-head"></div>
+      <div class="scroll"><table class="ledger" id="ledger-table"></table></div>
+      <h3 style="margin:14px 0 6px;font-size:14px">By neighbourhood (Equity Lens)</h3>
+      <div class="scroll"><table id="ledger-districts"></table></div>
+      <h3 style="margin:14px 0 6px;font-size:14px">By kind of resident: share worse off</h3>
+      <div class="scroll"><table id="ledger-groups"></table></div>
+      <p class="note" id="ledger-note"></p>
+    </section>
+    <div class="panel-grid">
+      <div class="col">
+        <section class="card">
+          <h2>Why did this happen?</h2>
+          <ol id="why"></ol>
+          <p class="note">Each step is calculated from the one before it. Nothing here is typed in.</p>
+        </section>
+        <section class="card" id="svc-card" hidden>
+          <div class="card-head"><h2>Hospitals and schools</h2><span class="hint" id="svc-hint"></span></div>
+          <div class="kpis" id="svc-kpis"></div>
+          <div class="scroll"><table id="svc-table"></table></div>
+          <p class="note" id="svc-load"></p>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Key numbers</h2><span class="hint" id="baseline-note">changes shown against the normal city</span></div>
+          <div class="kpis" id="kpis"></div>
+          <details class="all-metrics"><summary>Show all 18 metrics</summary>
+            <div class="metrics" id="metrics"></div>
+          </details>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card">
+          <div class="card-head"><h2>Public budget</h2><span class="hint">Tax and fares in, bus operations and services out</span></div>
+          <div class="scroll"><table id="budget-table"></table></div>
+          <h2 style="margin-top:14px">14-day outlook for the reserve</h2>
+          <div id="outlook"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESPOND: compare fixes -->
+  <div role="tabpanel" id="panel-respond" aria-labelledby="tab-respond" hidden>
+    <section class="card wide" id="compare">
+      <div class="card-head"><h2>Compare responses to this event</h2><span class="hint">Event: <span id="cmp-event"></span></span></div>
+      <p class="hint" style="margin:0 0 10px">Tries doing nothing, each response alone, and the best combinations you can afford, and ranks them on the total harm to the city over 14 days.</p>
+      <div class="cmp-controls">
+        <label for="cmp-budget">Emergency budget <input type="range" id="cmp-budget" min="0" max="60000" step="1000" value="40000"><output id="cmp-budget-out"></output></label>
+        <button id="btn-compare">Compare responses</button>
+        <button id="btn-sens" class="ghost" title="Re-runs the comparison with demand, road and bus capacity, value of time, travel choices and car ownership pushed up and down">Test the assumptions</button>
+        <progress id="cmp-bar" hidden value="0" max="1"></progress>
+        <span class="hint" id="cmp-status"></span>
+      </div>
+      <div id="cmp-rec"></div>
+      <div id="cmp-results"></div>
+      <div id="cmp-sens"></div>
+      <div id="cmp-explain"></div>
+    </section>
+  </div>
+
+  <!-- DETAILS: the full tables -->
+  <div role="tabpanel" id="panel-details" aria-labelledby="tab-details" hidden>
+    <div class="panel-grid">
+      <div class="col">
+        <section class="card">
+          <h2>Neighbourhoods</h2>
+          <div class="scroll"><table id="nbhd-table"></table></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Businesses by area</h2><span class="hint">Output = offices + industry + shops, after lateness, missing staff, shop visits, blackouts and water rationing</span></div>
+          <div class="scroll"><table id="econ-table"></table></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card">
+          <h2>Roads</h2>
+          <div class="scroll"><table id="road-table"></table></div>
+        </section>
+      </div>
+    </div>
+    <section class="card panel-wide" id="assumptions-card">
+      <div class="card-head"><h2>Assumptions</h2><span class="hint">Every number the model relies on</span></div>
+      <p class="hint" style="margin:0">None of these are results. They are what the model was told. To try different ones, download the city file from the City menu at the top, change the numbers, and load it back. Per-area figures (residents, jobs, shops, car ownership, flood risk) are in the city file too.</p>
+      <div id="assumptions"></div>
+    </section>
+  </div>
+</main>
+
+<script src="city-data.js"></script>
+<script src="cityfile.js"></script>
+<script src="city-boot.js"></script>
+<script src="sim.js"></script>
+<script src="economy.js"></script>
+<script src="services.js"></script>
+<script src="ledger.js"></script>
+<script src="events.js"></script>
+<script src="responses.js"></script>
+<script src="uncertainty.js"></script>
+<script src="assumptions.js"></script>
+<script src="report.js"></script>
+<script src="app.js"></script>
+<script src="example-city.js"></script>
+<script src="city-ui.js"></script>
+<script type="importmap">
+  { "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module">
+  import { createCityScene } from './city-3d.js';
+  window.CityScene = { create: createCityScene };
+  window.dispatchEvent(new Event('city-scene-ready'));
+</script>
+</body>
+</html>

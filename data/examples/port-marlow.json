@@ -1,0 +1,303 @@
+{
+  "name": "Port Marlow",
+  "note": "Example city for testing the loader: a small port town split by a north-south canal with two crossings. 2,000 agents stand for 10,000 residents.",
+  "map": {
+    "river": {
+      "path": "M50 0 C 46 25, 56 45, 50 70 S 46 90, 50 100",
+      "label": "Canal",
+      "labelX": 52,
+      "labelY": 6,
+      "bandX0": 42,
+      "bandX1": 58,
+      "bandY0": 0,
+      "bandY1": 100
+    }
+  },
+  "neighbourhoods": [
+    {
+      "id": "westgate",
+      "name": "Westgate",
+      "type": "residential",
+      "x": 15,
+      "y": 25,
+      "agents": 450,
+      "jobs": 60,
+      "shops": 60,
+      "income": "low",
+      "carOwnership": 0.5,
+      "floodRisk": 0.05,
+      "basePowerMW": 5,
+      "sectorMix": {
+        "retail": 0.5,
+        "office": 0.3,
+        "industry": 0.2
+      }
+    },
+    {
+      "id": "millbrook",
+      "name": "Millbrook",
+      "type": "industrial",
+      "x": 18,
+      "y": 72,
+      "agents": 300,
+      "jobs": 420,
+      "shops": 40,
+      "income": "middle",
+      "carOwnership": 0.6,
+      "floodRisk": 0.1,
+      "basePowerMW": 9,
+      "sectorMix": {
+        "retail": 0.1,
+        "office": 0.2,
+        "industry": 0.7
+      }
+    },
+    {
+      "id": "oldport",
+      "name": "Old Port",
+      "type": "jobs",
+      "x": 37,
+      "y": 48,
+      "agents": 250,
+      "jobs": 380,
+      "shops": 120,
+      "income": "middle",
+      "carOwnership": 0.55,
+      "floodRisk": 0.15,
+      "basePowerMW": 6,
+      "sectorMix": {
+        "retail": 0.4,
+        "office": 0.5,
+        "industry": 0.1
+      }
+    },
+    {
+      "id": "market",
+      "name": "Market Square",
+      "type": "jobs",
+      "x": 70,
+      "y": 55,
+      "agents": 150,
+      "jobs": 450,
+      "shops": 200,
+      "income": "high",
+      "carOwnership": 0.7,
+      "floodRisk": 0.1,
+      "basePowerMW": 7,
+      "sectorMix": {
+        "retail": 0.6,
+        "office": 0.4,
+        "industry": 0
+      }
+    },
+    {
+      "id": "eastfield",
+      "name": "Eastfield",
+      "type": "residential",
+      "x": 80,
+      "y": 22,
+      "agents": 450,
+      "jobs": 90,
+      "shops": 90,
+      "income": "high",
+      "carOwnership": 0.85,
+      "floodRisk": 0.05,
+      "basePowerMW": 5,
+      "sectorMix": {
+        "retail": 0.6,
+        "office": 0.4,
+        "industry": 0
+      }
+    },
+    {
+      "id": "seaside",
+      "name": "Seaside",
+      "type": "mixed",
+      "x": 84,
+      "y": 82,
+      "agents": 400,
+      "jobs": 100,
+      "shops": 110,
+      "income": "middle",
+      "carOwnership": 0.7,
+      "floodRisk": 0.2,
+      "basePowerMW": 5,
+      "sectorMix": {
+        "retail": 0.7,
+        "office": 0.3,
+        "industry": 0
+      }
+    }
+  ],
+  "roads": [
+    {
+      "id": "r1",
+      "name": "Mill Lane",
+      "from": "westgate",
+      "to": "oldport",
+      "km": 5,
+      "freeFlowMin": 7,
+      "capacity": 600,
+      "bridge": false,
+      "floodProne": false
+    },
+    {
+      "id": "r2",
+      "name": "Anchor Road",
+      "from": "millbrook",
+      "to": "oldport",
+      "km": 5,
+      "freeFlowMin": 7,
+      "capacity": 600,
+      "bridge": false,
+      "floodProne": false
+    },
+    {
+      "id": "r3",
+      "name": "Ridge Road",
+      "from": "westgate",
+      "to": "millbrook",
+      "km": 5,
+      "freeFlowMin": 7,
+      "capacity": 450,
+      "bridge": false,
+      "floodProne": false
+    },
+    {
+      "id": "r4",
+      "name": "Canal Bridge",
+      "from": "oldport",
+      "to": "market",
+      "km": 4,
+      "freeFlowMin": 6,
+      "capacity": 800,
+      "bridge": true,
+      "floodProne": false
+    },
+    {
+      "id": "r5",
+      "name": "South Bridge",
+      "from": "millbrook",
+      "to": "seaside",
+      "km": 9,
+      "freeFlowMin": 12,
+      "capacity": 450,
+      "bridge": true,
+      "floodProne": true
+    },
+    {
+      "id": "r6",
+      "name": "Hill Road",
+      "from": "market",
+      "to": "eastfield",
+      "km": 5,
+      "freeFlowMin": 7,
+      "capacity": 650,
+      "bridge": false,
+      "floodProne": false
+    },
+    {
+      "id": "r7",
+      "name": "Shore Road",
+      "from": "market",
+      "to": "seaside",
+      "km": 4,
+      "freeFlowMin": 6,
+      "capacity": 500,
+      "bridge": false,
+      "floodProne": true
+    },
+    {
+      "id": "r8",
+      "name": "Coast Road",
+      "from": "eastfield",
+      "to": "seaside",
+      "km": 8,
+      "freeFlowMin": 11,
+      "capacity": 400,
+      "bridge": false,
+      "floodProne": false
+    }
+  ],
+  "busLines": [
+    {
+      "id": "A",
+      "name": "Canal Line",
+      "stops": [
+        "westgate",
+        "oldport",
+        "market",
+        "eastfield"
+      ],
+      "headwayMin": 8,
+      "buses": 8,
+      "capacityPerBus": 80,
+      "fare": 1
+    },
+    {
+      "id": "B",
+      "name": "South Line",
+      "stops": [
+        "millbrook",
+        "oldport",
+        "market",
+        "seaside"
+      ],
+      "headwayMin": 8,
+      "buses": 8,
+      "capacityPerBus": 80,
+      "fare": 1
+    },
+    {
+      "id": "C",
+      "name": "Shore Link",
+      "stops": [
+        "millbrook",
+        "seaside"
+      ],
+      "headwayMin": 15,
+      "buses": 3,
+      "capacityPerBus": 60,
+      "fare": 1
+    }
+  ],
+  "utilities": {
+    "power": {
+      "supplyCapacityMW": 55,
+      "heatwaveDemandMultiplier": 1.35,
+      "peakHourMultiplier": 1.25
+    },
+    "water": {
+      "supplyCapacityML": 50,
+      "baseDemandMLPer1000Residents": 4,
+      "floodSupplyReduction": 0.35,
+      "heatwaveDemandMultiplier": 1.2
+    }
+  },
+  "budget": {
+    "dailyReserve": 20000,
+    "businessTaxRate": 0.08,
+    "incomeTaxPerWorkerDay": 6,
+    "busCostPerBusHour": 45,
+    "busHoursPerDay": 16,
+    "baseServicesCostPerDay": 104000,
+    "roadRepairCostPerDamagedEdge": 8000,
+    "emergencySpendingLimit": 30000,
+    "austerity": {
+      "enabled": true,
+      "minService": 0.4,
+      "stepPerDay": 0.1,
+      "restoreAbove": 10000
+    }
+  },
+  "services": {
+    "hospitalMaxMin": 20,
+    "schoolMaxMin": 25,
+    "facilities": [
+      { "id": "marlow_general", "type": "hospital", "name": "Marlow General Hospital", "at": "market", "capacity": 900 },
+      { "id": "westgate_school", "type": "school", "name": "Westgate School", "at": "westgate", "capacity": 500 },
+      { "id": "eastfield_school", "type": "school", "name": "Eastfield School", "at": "eastfield", "capacity": 500 },
+      { "id": "seaside_school", "type": "school", "name": "Seaside School", "at": "seaside", "capacity": 450 }
+    ]
+  }
+}

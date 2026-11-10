@@ -1,0 +1,136 @@
+{
+  "name": "Lumen Bay",
+
+  "note": "Fictional city. A river runs west to east at about y=45. Only 3 bridges cross it, which makes the city fragile and the simulation interesting. Each agent represents 5 real residents (3,000 agents = 15,000 residents). Road capacity is the effective peak-direction capacity in vehicles per hour. Day 3 adds businesses, utilities and the budget (see economy.js). Calibrated on Day 2 so the baseline is roughly 49% car, 42% bus, 8% walk.",
+
+  "neighbourhoods": [
+    { "id": "northfield", "name": "Northfield", "type": "residential", "x": 18, "y": 18, "agents": 700, "jobs": 100, "shops": 150, "income": "middle", "carOwnership": 0.75, "floodRisk": 0.1, "basePowerMW": 9, "sectorMix": { "retail": 0.7, "office": 0.3, "industry": 0 } },
+    { "id": "hillcrest", "name": "Hillcrest", "type": "residential", "x": 55, "y": 12, "agents": 400, "jobs": 50, "shops": 60, "income": "high", "carOwnership": 0.95, "floodRisk": 0, "basePowerMW": 6.5, "sectorMix": { "retail": 0.6, "office": 0.4, "industry": 0 } },
+    { "id": "techpark", "name": "Tech Park", "type": "jobs", "x": 85, "y": 25, "agents": 50, "jobs": 700, "shops": 30, "income": "high", "carOwnership": 0.9, "floodRisk": 0, "basePowerMW": 14, "sectorMix": { "retail": 0.05, "office": 0.95, "industry": 0 } },
+    { "id": "cbd", "name": "Central Business District", "type": "jobs", "x": 62, "y": 55, "agents": 100, "jobs": 900, "shops": 300, "income": "high", "carOwnership": 0.6, "floodRisk": 0.3, "basePowerMW": 18, "sectorMix": { "retail": 0.25, "office": 0.75, "industry": 0 } },
+    { "id": "oldtown", "name": "Old Town", "type": "mixed", "x": 45, "y": 62, "agents": 350, "jobs": 350, "shops": 400, "income": "middle", "carOwnership": 0.5, "floodRisk": 0.4, "basePowerMW": 11, "sectorMix": { "retail": 0.5, "office": 0.2, "industry": 0.3 } },
+    { "id": "riverside", "name": "Riverside", "type": "residential", "x": 22, "y": 58, "agents": 500, "jobs": 150, "shops": 120, "income": "middle", "carOwnership": 0.6, "floodRisk": 0.9, "basePowerMW": 7.5, "sectorMix": { "retail": 0.6, "office": 0.2, "industry": 0.2 } },
+    { "id": "harbor", "name": "Harbor", "type": "industrial", "x": 40, "y": 85, "agents": 250, "jobs": 600, "shops": 40, "income": "low", "carOwnership": 0.45, "floodRisk": 0.6, "basePowerMW": 16, "sectorMix": { "retail": 0, "office": 0.1, "industry": 0.9 } },
+    { "id": "eastgate", "name": "Eastgate", "type": "residential", "x": 85, "y": 70, "agents": 650, "jobs": 150, "shops": 100, "income": "low", "carOwnership": 0.35, "floodRisk": 0.2, "basePowerMW": 8, "sectorMix": { "retail": 0.7, "office": 0, "industry": 0.3 } }
+  ],
+
+  "roads": [
+    { "id": "e1", "name": "Northfield Road", "from": "northfield", "to": "hillcrest", "km": 6, "freeFlowMin": 8, "capacity": 675, "bridge": false, "floodProne": false },
+    { "id": "e2", "name": "Hillcrest Avenue", "from": "hillcrest", "to": "techpark", "km": 5, "freeFlowMin": 6, "capacity": 675, "bridge": false, "floodProne": false },
+    { "id": "e3", "name": "Crown Bridge", "from": "northfield", "to": "cbd", "km": 9, "freeFlowMin": 12, "capacity": 810, "bridge": true, "floodProne": true },
+    { "id": "e4", "name": "Kings Bridge", "from": "hillcrest", "to": "cbd", "km": 7, "freeFlowMin": 9, "capacity": 630, "bridge": true, "floodProne": false },
+    { "id": "e5", "name": "Tech Bridge", "from": "techpark", "to": "eastgate", "km": 10, "freeFlowMin": 11, "capacity": 540, "bridge": true, "floodProne": true },
+    { "id": "e6", "name": "Market Street", "from": "cbd", "to": "oldtown", "km": 3, "freeFlowMin": 5, "capacity": 990, "bridge": false, "floodProne": false },
+    { "id": "e7", "name": "Riverbank Road", "from": "oldtown", "to": "riverside", "km": 3, "freeFlowMin": 5, "capacity": 540, "bridge": false, "floodProne": true },
+    { "id": "e8", "name": "Embankment Way", "from": "riverside", "to": "harbor", "km": 4, "freeFlowMin": 6, "capacity": 450, "bridge": false, "floodProne": true },
+    { "id": "e9", "name": "Harbor Road", "from": "oldtown", "to": "harbor", "km": 4.5, "freeFlowMin": 7, "capacity": 585, "bridge": false, "floodProne": false },
+    { "id": "e10", "name": "Eastern Boulevard", "from": "cbd", "to": "eastgate", "km": 5, "freeFlowMin": 8, "capacity": 585, "bridge": false, "floodProne": false },
+    { "id": "e11", "name": "Dockside Road", "from": "eastgate", "to": "harbor", "km": 6, "freeFlowMin": 9, "capacity": 495, "bridge": false, "floodProne": false }
+  ],
+
+  "busLines": [
+    { "id": "L1", "name": "Crown Line", "stops": ["northfield", "cbd", "oldtown", "riverside"], "headwayMin": 6, "buses": 12, "capacityPerBus": 90, "fare": 1 },
+    { "id": "L2", "name": "East Express", "stops": ["eastgate", "cbd", "oldtown", "harbor"], "headwayMin": 6, "buses": 10, "capacityPerBus": 90, "fare": 1 },
+    { "id": "L3", "name": "Tech Shuttle", "stops": ["hillcrest", "techpark", "eastgate"], "headwayMin": 8, "buses": 6, "capacityPerBus": 70, "fare": 1.2 }
+  ],
+
+  "businesses": {
+    "retail": { "revenuePerVisit": 18, "productivityLossPerLateMin": 0.003, "powerSensitivity": 0.8, "waterSensitivity": 0.3 },
+    "office": { "revenuePerWorkerDay": 90, "productivityLossPerLateMin": 0.004, "powerSensitivity": 0.9, "waterSensitivity": 0.2 },
+    "industry": { "revenuePerWorkerDay": 70, "productivityLossPerLateMin": 0.006, "powerSensitivity": 1, "waterSensitivity": 0.7 }
+  },
+
+  "utilities": {
+    "power": { "supplyCapacityMW": 125, "heatwaveDemandMultiplier": 1.35, "peakHourMultiplier": 1.25 },
+    "water": { "supplyCapacityML": 75, "baseDemandMLPer1000Residents": 4, "floodSupplyReduction": 0.35, "heatwaveDemandMultiplier": 1.2 }
+  },
+
+  "budget": {
+    "dailyReserve": 25000,
+    "businessTaxRate": 0.08,
+    "incomeTaxPerWorkerDay": 6,
+    "busCostPerBusHour": 45,
+    "busHoursPerDay": 16,
+    "baseServicesCostPerDay": 180000,
+    "roadRepairCostPerDamagedEdge": 8000,
+    "emergencySpendingLimit": 40000,
+    "austerity": { "enabled": true, "minService": 0.4, "stepPerDay": 0.1, "restoreAbove": 10000 }
+  },
+
+  "assumptions": {
+    "seed": 42,
+    "agentRepresentsResidents": 5,
+    "peakHourShare": 0.4,
+    "carOccupancy": 1.2,
+    "busPcu": 2.5,
+    "congestionFormula": "travelTime = freeFlow * (1 + 0.15 * (volume / capacity) ^ 4)",
+    "bprAlpha": 0.15,
+    "bprBeta": 4,
+    "modeChoice": "logit on generalized cost = time + wait penalty + money cost converted to minutes",
+    "logitScaleMin": 8,
+    "valueOfTimeCreditsPerMin": 0.3,
+    "incomeVotMultiplier": { "low": 0.67, "middle": 1, "high": 1.5 },
+    "carCostPerKm": 0.25,
+    "parking": { "cbd": 4, "oldtown": 2.5, "default": 1 },
+    "busWaitPenaltyMultiplier": 1.8,
+    "busAccessMin": 6,
+    "busTransferMin": 4,
+    "busDisutilityMin": 7,
+    "busSpeedFactorVsCar": 0.85,
+    "busCrowdingStart": 0.8,
+    "busCrowdingMinPerUnit": 25,
+    "busCrowdingMaxMin": 30,
+    "walkSpeedKmh": 4.5,
+    "maxWalkKm": 3,
+    "heatwaveWalkPenaltyMultiplier": 1.5,
+    "intraZoneKm": 1,
+    "intraZoneCarMin": 4,
+    "jobDistanceDecayMin": 25,
+    "msaIterations": 40,
+    "latenessToleranceMin": 5,
+    "shopVisitDropPerExtraTripMin": 0.012,
+    "tripsPerWorkerDay": 2,
+    "strandedProductivity": 0.25,
+    "shopTripsPerResidentDay": 1,
+    "shopDecayMin": 15,
+    "presenceLoadShare": 0.5,
+    "signalCapacityLossPerShortfall": 0.5
+  },
+
+  "services": {
+    "note": "Essential services (Day 8, from the CitySim Nexus deck). Hospitals and schools sit in a neighbourhood. A resident has access if they can get there within the time limit under the morning-peak conditions the model solves for. healthNeedShare and schoolAgeShare are the shares of residents who regularly need a hospital or attend school. capacity is how many such residents one facility can serve.",
+    "hospitalMaxMin": 20,
+    "schoolMaxMin": 25,
+    "healthNeedShare": 0.12,
+    "schoolAgeShare": 0.2,
+    "facilities": [
+      { "id": "bay_general", "type": "hospital", "name": "Bay General Hospital", "at": "cbd", "capacity": 1100 },
+      { "id": "harbor_health", "type": "hospital", "name": "Harbor Health Centre", "at": "harbor", "capacity": 700 },
+      { "id": "northfield_school", "type": "school", "name": "Northfield School", "at": "northfield", "capacity": 800 },
+      { "id": "hillcrest_school", "type": "school", "name": "Hillcrest Academy", "at": "hillcrest", "capacity": 450 },
+      { "id": "oldtown_school", "type": "school", "name": "Old Town School", "at": "oldtown", "capacity": 800 },
+      { "id": "riverside_school", "type": "school", "name": "Riverside School", "at": "riverside", "capacity": 600 },
+      { "id": "eastgate_school", "type": "school", "name": "Eastgate School", "at": "eastgate", "capacity": 800 },
+      { "id": "harbor_school", "type": "school", "name": "Harbor School", "at": "harbor", "capacity": 400 }
+    ]
+  },
+
+  "events": [
+    { "id": "bus_cut",      "name": "Bus frequency cut", "params": { "cutFraction": 0.3 }, "durationDays": null },
+    { "id": "bridge_close", "name": "Bridge closure",    "params": { "roadId": "e3" }, "durationDays": 10 },
+    { "id": "flood",        "name": "River flood",       "params": { "closeFloodProne": true, "waterReduction": 0.35 }, "durationDays": 6 },
+    { "id": "heatwave",     "name": "Heatwave",          "params": { "powerMultiplier": 1.35, "walkPenalty": 1.5 }, "durationDays": 4 },
+    { "id": "strike",       "name": "Transit strike",    "params": { "serviceRemaining": 0.1 }, "durationDays": 5 }
+  ],
+
+  "responses": [
+    { "id": "add_buses",      "name": "Add buses",                "oneOff": 12000, "effect": { "busFrequencyMult": 1.5 },
+      "how": "Lease extra buses: 50% more trips on every regular line. Running cost follows the extra bus-hours." },
+    { "id": "stagger_hours",  "name": "Stagger work start times", "oneOff": 2000,  "effect": { "peakShareMult": 0.75, "outputLoss": 0.01 },
+      "how": "A quarter of the peak-hour trips move to other hours. Costs 1% of output through harder team coordination." },
+    { "id": "shuttle",        "name": "Temporary shuttle",        "oneOff": 9000,  "effect": { "shuttle": { "headwayMin": 8, "buses": 6, "capacityPerBus": 70, "fare": 0.5 } },
+      "how": "A new express line from the worst-hit connected area to the main job centre along open roads." },
+    { "id": "emergency_fund", "name": "Emergency repair crews",   "oneOff": 20000, "effect": { "recoveryMult": 0.5 },
+      "how": "Flooded and closed roads reopen in half the time." }
+  ]
+}
