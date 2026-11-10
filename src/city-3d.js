@@ -266,7 +266,7 @@ export function createCityScene(host, data, handlers) {
     var a = worldPoint(data.neighbourhoods.find(function (n) { return n.id === road.from; }), data.name);
     var b = worldPoint(data.neighbourhoods.find(function (n) { return n.id === road.to; }), data.name);
     var dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
-    var setback = Math.min(14, length * 0.25);
+    var setback = Math.min(11.5, length * 0.25);
     a = { x: a.x + dx / length * setback, z: a.z + dz / length * setback };
     b = { x: b.x - dx / length * setback, z: b.z - dz / length * setback };
     var group = new THREE.Group();
