@@ -1,4 +1,4 @@
-# Publishes the simulator (a static page, no build step) so judges can open it from a link.
+# Publishes the intro page as the site home and the simulator as a separate page.
 # One-time setup in GitHub: Settings > Pages > Build and deployment > Source: "GitHub Actions".
 name: Publish the simulator
 on:
@@ -26,8 +26,14 @@ jobs:
       - name: Model tests (no install needed)
         run: npm test
       - uses: actions/configure-pages@v5
+      - name: Prepare site with the intro page as home
+        run: |
+          mkdir -p _site
+          cp -R src/. _site/
+          mv _site/index.html _site/simulator.html
+          mv _site/intro.html _site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: src
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

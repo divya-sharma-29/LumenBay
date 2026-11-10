@@ -351,6 +351,9 @@ Open:
 http://localhost:5173
 ```
 
+On GitHub Pages, the project home URL opens the Lumen Bay introduction first.
+Choose **Open the simulator** to enter the interactive simulator.
+
 ### 3. Set Up the Backend
 
 Open another terminal from the project root:

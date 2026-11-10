@@ -10,7 +10,7 @@ const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 function createServer() {
   return http.createServer((req, res) => {
     const url = decodeURIComponent(req.url.split('?')[0]);
-    const page = url === '/' ? 'intro.html' : url;
+    const page = url === '/' ? 'intro.html' : url === '/simulator.html' ? 'index.html' : url;
     const file = path.normalize(path.join(root, page));
     if (!file.startsWith(root + path.sep) && file !== root) { res.writeHead(403); return res.end('Forbidden'); }
     fs.readFile(file, (err, body) => {

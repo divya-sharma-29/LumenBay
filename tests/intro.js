@@ -9,9 +9,14 @@ function ok(cond, msg) { assert(cond, msg); n++; console.log('PASS ' + msg); }
 
 const refs = []; html.replace(/(?:src|href)="([^"#][^"]*)"/g, function (_, u) { refs.push(u); });
 refs.filter(function (u) { return !/^https?:/.test(u); }).forEach(function (u) {
-  ok(fs.existsSync(path.join(src, u.split('?')[0])), 'intro.html: local file exists: ' + u);
+  const localPath = u.split('?')[0] === 'simulator.html' ? 'index.html' : u.split('?')[0];
+  ok(fs.existsSync(path.join(src, localPath)), 'intro.html: local file or simulator route exists: ' + u);
 });
-ok(refs.some(function (u) { return u === 'index.html'; }), 'intro.html links to the simulator (index.html)');
+ok(refs.some(function (u) { return u === 'simulator.html'; }), 'intro.html links to the deployed simulator route');
+const pagesWorkflow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'pages.yml'), 'utf8');
+ok(/mv _site\/index\.html _site\/simulator\.html/.test(pagesWorkflow) &&
+  /mv _site\/intro\.html _site\/index\.html/.test(pagesWorkflow),
+  'GitHub Pages publishes the intro as home and simulator separately');
 const visibleCopy = html.replace(/<[^>]*>/g, ' ');
 ok(!/(AI-generated|concept art|fictional|not a real place|illustrative)/i.test(visibleCopy), 'intro has no artwork or fictional-city disclaimers');
 ok(!/<(script|link|img)[^>]+(src|href)="https?:\/\/(?!github\.com)/.test(html), 'intro.html loads no script, style or image from the internet');
