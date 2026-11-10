@@ -233,8 +233,6 @@ LumenBay uses a modern web development architecture combining frontend visualiza
 | Version Control | Git and GitHub |
 | Deployment | Render |
 
-*The 3D visualization and data-storage integrations should be updated here to reflect the exact libraries and services used in the final implementation.*
-
 ## 🏗️ System Architecture
 
 LumenBay follows a frontend-backend architecture.
@@ -447,7 +445,7 @@ Potential future enhancements include:
 
 **Institution:** Don Bosco Institute of Technology, Bengaluru
 
-**Event:** [Add hackathon or competition name]
+**Event:** CodeQuest National Tech Hackathon 2026
 
 The project combines frontend engineering, backend development, simulation logic, data visualization and urban systems thinking to explore a more connected approach to city planning.
 
