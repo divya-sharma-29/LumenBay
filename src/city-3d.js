@@ -71,7 +71,7 @@ export function createCityScene(host, data, handlers) {
 
   var scene = new THREE.Scene();
   scene.background = new THREE.Color(0x9bd5f1);
-  scene.fog = new THREE.Fog(0x9bd5f1, 100, 220);
+  scene.fog = null;
   var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 360);
   camera.position.set(72, 78, 84);
   camera.lookAt(0, 0, 0);
@@ -80,8 +80,10 @@ export function createCityScene(host, data, handlers) {
   controls.target.set(0, 2, 0);
   controls.enableDamping = true;
   controls.dampingFactor = 0.075;
-  controls.minDistance = 70;
-  controls.maxDistance = 215;
+  // Keep the camera outside the modeled city so zooming in cannot leave the
+  // view inside buildings or below the ground plane.
+  controls.minDistance = 130;
+  controls.maxDistance = 225;
   controls.maxPolarAngle = Math.PI * 0.47;
   controls.update();
 
