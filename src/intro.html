@@ -10,7 +10,7 @@
      The 3D scene, copy and layout content are original to this project. -->
 <style>
 :root{
-  --ink:#06080b; --bone:#e8e4da; --bone-dim:#b6b3a8; --muted:#8a8c86;
+  --ink:#06080b; --bone:#f2efe7; --bone-dim:#d0cdc3; --muted:#b1b1aa;
   --line:rgba(232,228,218,.15); --line-soft:rgba(232,228,218,.08);
   --accent:#ff7a3c; --accent-2:#ffb347;
   --pad:clamp(20px,3.4vw,56px); --nav-h:84px;
@@ -39,7 +39,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent-2);outline-o
 .ov text{font-family:'Onest',system-ui,sans-serif;font-weight:500;letter-spacing:.06em;fill:#fff;paint-order:stroke;stroke:rgba(10,12,16,.8);stroke-width:5px}
 .ov .pulse{animation:pulse 2.2s ease-out infinite;transform-origin:center;transform-box:fill-box}
 @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
-#grade{position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(rgba(6,8,11,.4),rgba(6,8,11,.22) 40%,rgba(6,8,11,.5));transition:opacity .8s}
+#grade{position:fixed;inset:0;z-index:2;pointer-events:none;background:linear-gradient(rgba(6,8,11,.58),rgba(6,8,11,.48) 42%,rgba(6,8,11,.64));transition:opacity .8s}
 #vignette{position:fixed;inset:0;z-index:55;pointer-events:none;background:radial-gradient(125% 95% at 50% 42%,transparent 45%,rgba(3,4,6,.6) 100%)}
 .page{position:relative;z-index:10;overflow-x:clip}
 
@@ -48,8 +48,8 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .display{text-transform:uppercase;line-height:1.055;letter-spacing:-.012em;text-shadow:0 2px 34px rgba(3,6,8,.8)}
 .h-hero{font-size:clamp(28px,3.4vw,52px)}
 .h-sec{font-size:clamp(28px,3.8vw,58px)}
-.body-lg{font-size:clamp(14px,1.05vw,17px);line-height:1.72;color:#cfccc2;text-shadow:0 1px 20px rgba(3,6,8,.9)}
-.body{font-size:14px;line-height:1.68;color:#c3c0b6;text-shadow:0 1px 18px rgba(3,6,8,.9)}
+.body-lg{font-size:clamp(14px,1.05vw,17px);line-height:1.72;color:#f0eee7;text-shadow:0 1px 20px rgba(3,6,8,.95)}
+.body{font-size:14px;line-height:1.68;color:#e8e5dc;text-shadow:0 1px 18px rgba(3,6,8,.95)}
 
 /* reveal */
 [data-rv]{opacity:0}
@@ -100,8 +100,8 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .hero h1{margin-bottom:18px}
 .hero-sub{max-width:380px}
-.hero-spacer{flex:1 1 auto;min-height:clamp(120px,24vh,280px)}
-.hero-foot{padding-bottom:clamp(22px,4.2vh,42px);position:relative;z-index:2}
+.hero-spacer{flex:1 1 auto;min-height:clamp(20px,4vh,44px)}
+.hero-foot{padding-bottom:clamp(12px,2vh,22px);position:relative;z-index:2}
 .hero-foot::before{content:'';position:absolute;left:calc(var(--pad) * -1);right:calc(var(--pad) * -1);bottom:0;height:150%;z-index:-1;pointer-events:none;background:linear-gradient(transparent,rgba(3,5,8,.82) 60%)}
 .hero-cue{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-bottom:14px;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--bone-dim)}
 .hero-cue .track{width:54px;height:1px;background:var(--line);position:relative;overflow:hidden}
@@ -111,7 +111,7 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .chip{display:flex;gap:14px;align-items:flex-start}
 .chip .num{font-size:clamp(24px,2.3vw,34px);font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;transition:color .4s}
 .chip b{display:block;font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--bone);margin-bottom:6px}
-.chip p{margin:0;font-size:12px;line-height:1.5;color:#b9b6ab;max-width:24ch}
+.chip p{margin:0;font-size:12px;line-height:1.5;color:#e2dfd6;max-width:24ch;text-shadow:0 1px 8px rgba(0,0,0,.95)}
 .chip .tx{padding-top:3px;min-width:0}
 .chip:hover .num{color:var(--accent)}
 .arrowlink{display:inline-flex;align-items:center;gap:12px;margin-top:30px;font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase}
@@ -167,7 +167,7 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .les .k{font-size:11px;letter-spacing:.16em;color:var(--bone-dim);font-variant-numeric:tabular-nums}
 .les:hover .k{color:var(--accent)}
 .les h3{font-size:clamp(16px,1.5vw,23px)}
-.les p{margin:0;font-size:13px;line-height:1.6;color:#c3c0b6;text-shadow:0 1px 16px rgba(3,6,8,.92)}
+.les p{margin:0;font-size:13px;line-height:1.6;color:#e6e3dc;text-shadow:0 1px 16px rgba(3,6,8,.98)}
 .les .t{text-align:right;font-size:12px;letter-spacing:.1em;color:var(--bone);font-variant-numeric:tabular-nums}
 
 .fin{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
@@ -188,9 +188,10 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
 .foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,.6fr));gap:clamp(22px,4vw,60px)}
 .foot h4{margin:0 0 16px;font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 .foot ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
-.foot li a{font-size:13px;color:#a4a69e;transition:color .35s}
+.foot li,.foot li a{font-size:13px;color:#d0cdc3}
+.foot li a{transition:color .35s}
 .foot li a:hover{color:var(--bone)}
-.foot-brand p{margin:16px 0 0;max-width:36ch;font-size:13px;color:#8d908a}
+.foot-brand p{margin:16px 0 0;max-width:36ch;font-size:13px;color:#d0cdc3}
 .foot-base{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:clamp(38px,6vh,74px);padding-top:20px;border-top:1px solid var(--line-soft);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 
 .rail{position:fixed;right:calc(var(--pad) - 4px);top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:12px;align-items:center}
@@ -215,6 +216,7 @@ h1,h2,h3{font-weight:400;margin:0;letter-spacing:-.005em}
   .nav-link{font-size:13px}
   .chapters{grid-template-columns:1fr 1fr;row-gap:22px}
   .hero-sub{max-width:300px}
+  .hero-spacer{min-height:16px}
   .cards{grid-template-columns:1fr}
   .card:nth-child(n){transform:none}
   .card-fr{aspect-ratio:16/10}

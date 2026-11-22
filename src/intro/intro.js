@@ -21,14 +21,10 @@
     $$('button', rail).forEach(function (b, j) { b.classList.toggle('on', j === i); });
   }
 
-  /* reveal on scroll */
+  /* Reveal the page together on load instead of hiding content until scroll. */
   function wireReveals() {
     var els = $$('[data-rv], .mask-line');
-    if (!('IntersectionObserver' in window) || reduce) { els.forEach(function (e) { e.classList.add('rv-in'); }); return; }
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('rv-in'); io.unobserve(e.target); } });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    els.forEach(function (e) { io.observe(e); });
+    els.forEach(function (e) { e.classList.add('rv-in'); });
   }
 
   /* nav */
