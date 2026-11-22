@@ -32,8 +32,8 @@ jobs:
           cp -R src/. _site/
           mv _site/index.html _site/simulator.html
           mv _site/intro.html _site/index.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
