@@ -1345,7 +1345,35 @@
       next = 'Try a preset on the right, press <b>Surprise me</b>, or click a road to close it.';
     }
     $('sum-next').innerHTML = next;
+    paintResilience();
     paintRange();
+  }
+
+  // Compare current and optimized outcomes using the same transparent index.
+  function resilienceFor(city, projection, reference) {
+    var service = Services.has(data) ? { city: Services.access(data, city).city, reference: Services.access(data, reference).city } : null;
+    var equity = Ledger.compare(data, agents, city, reference);
+    return Resilience.evaluate(data, city, reference, service, equity, projection);
+  }
+  function paintResilience() {
+    var host = $('resilience-panel');
+    if (!host || !window.Resilience) return;
+    var current = resilienceFor(result, projectionFor(scenario), baseline);
+    var fresh = cmp.result && cmp.key === eventKey(scenario);
+    var winner = fresh ? cmp.result.rows.filter(function (row) { return row.oneOff <= cmp.budget; })[0] : null;
+    var best = winner && winner.ids.length ? resilienceFor(runIds(winner.ids), winner.proj, baseline) : null;
+    var delta = best ? best.score - current.score : 0;
+    function dimension(d) {
+      var cls = d.value >= 75 ? 'good' : d.value >= 50 ? '' : 'bad';
+      return '<div class="resilience-dim"><span>' + esc(d.label) + '</span><b class="' + cls + '">' + Math.round(d.value) + '</b>' +
+        '<progress max="100" value="' + Math.round(d.value) + '" aria-label="' + esc(d.label) + '"></progress><small>' + esc(d.basis) + '</small></div>';
+    }
+    host.innerHTML = '<div class="resilience-score"><strong>' + current.score + '</strong><span>/ 100 current</span>' +
+      '<span class="hint">Reference: ' + resilienceFor(baseline, baselineProj, baseline).score + '</span>' +
+      (best ? '<span class="' + (delta >= 0 ? 'up-good' : 'up-bad') + '"> · Optimized ' + best.score + ' (' + sgn(delta, 0) + ')</span>' : '') +
+      '</div><div class="resilience-dims">' + current.dimensions.map(dimension).join('') + '</div>' +
+      (best ? '<p class="note">Optimizer strategy: <b>' + esc(winner.name) + '</b>. Dimension scores above describe the active scenario; the optimized score uses the same model calculations and budget-feasible plan.</p>' :
+      '<p class="note">Run the response optimizer to see the budget-feasible post-intervention score.</p>');
   }
 
   $('sum-next').addEventListener('click', function (ev) {
@@ -1856,6 +1884,33 @@
   $('cmp-budget').value = cmp.budget;
   $('cmp-budget-out').textContent = fmtK(cmp.budget, 0);
   $('btn-compare').addEventListener('click', startCompare);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-demo]'), function (button) {
+    button.addEventListener('click', function () {
+      var kind = button.getAttribute('data-demo');
+      scenario = freshScenario();
+      viewDay = 1;
+      var intros = {
+        bridge: 'A critical bridge is unavailable. Watch detours change travel, access, and business activity; the optimizer will search affordable responses.',
+        flood: 'Floodwater closes vulnerable roads and strains water supply. The model will compare feasible responses against doing nothing.',
+        heat: 'A heatwave raises utility demand and changes travel conditions. The optimizer will test responses against the same 14-day outlook.',
+        strike: 'Transit service drops during a strike. Compare service, mobility, budget, and resident impacts across response plans.',
+        compound: 'Flooding, heat, and a bridge closure overlap. This compound scenario exposes trade-offs across transport, utilities, equity, and reserve.'
+      };
+      if (kind === 'bridge' || kind === 'compound') scenario.closedRoads.push(mainBridge.id);
+      if (kind === 'flood' || kind === 'compound') scenario.flood = true;
+      if (kind === 'heat' || kind === 'compound') scenario.heatwave = true;
+      if (kind === 'strike') scenario.strike = true;
+      $('demo-intro').textContent = intros[kind] || 'Modeled city crisis loaded.';
+      $('demo-intro').hidden = false;
+      $('demo-launch').open = true;
+      cmp.token++;
+      cmp.running = false;
+      cmp.result = null;
+      update();
+      showTab('respond');
+      startCompare();
+    });
+  });
   $('btn-goto-compare').addEventListener('click', function () {
     showTab('respond');
     if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });

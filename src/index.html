@@ -37,7 +37,7 @@
   .hint { color: var(--muted); font-size: 13px; }
 
   /* interactive miniature city */
-  #city-3d { position: relative; width: 100%; height: clamp(440px, 58vw, 680px); overflow: hidden;
+  #city-3d { position: relative; width: 100%; flex: 0 0 auto; height: clamp(420px, 42vw, 620px); overflow: hidden;
     border-radius: 10px; background: linear-gradient(#a7dcf3, #e1f3fc 72%, #84bb70); box-shadow: inset 0 0 0 1px var(--border); }
   #city-3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   #city-3d:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
@@ -299,6 +299,18 @@
   .chart .band { fill: var(--accent); opacity: 0.16; stroke: none; }
   .conf { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--chip); }
   .conf.ok { border-left: 4px solid var(--good); } .conf.close { border-left: 4px solid #d98e04; }
+  .demo-launch { margin: 0 24px 12px; }
+  .demo-launch summary { cursor: pointer; color: var(--accent); font-weight: 700; }
+  .demo-launch .btns { margin: 8px 0; }
+  .resilience { margin-top: 16px; }
+  .resilience-score { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 12px; }
+  .resilience-score strong { font-size: 38px; line-height: 1; }
+  .resilience-dims { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 8px; }
+  .resilience-dim { padding: 9px 11px; background: var(--chip); border-radius: 8px; }
+  .resilience-dim b { float: right; }
+  .resilience-dim progress { display: block; width: 100%; height: 7px; margin-top: 7px; }
+  .resilience-dim small { color: var(--muted); }
+  .demo-intro { border-left: 4px solid var(--accent); padding: 8px 12px; background: var(--chip); }
 </style>
 </head>
 <body>
@@ -330,6 +342,19 @@
   </div>
   <p class="sum-range" id="sum-range" role="status"></p>
 </section>
+
+<details class="demo-launch" id="demo-launch">
+  <summary>Judge demo · launch a modeled crisis and run the response optimizer</summary>
+  <p class="hint">Each preset resets the city, loads the disruption into the simulation, and starts a fresh response comparison.</p>
+  <div class="btns">
+    <button type="button" data-demo="bridge">Bridge collapse</button>
+    <button type="button" data-demo="flood">Urban flood</button>
+    <button type="button" data-demo="heat">Heatwave</button>
+    <button type="button" data-demo="strike">Transit strike</button>
+    <button type="button" data-demo="compound">Compound crisis</button>
+  </div>
+  <p id="demo-intro" class="demo-intro" hidden></p>
+</details>
 
 <nav class="tabs" aria-label="Views"><div class="tablist" role="tablist" aria-label="Views">
   <button type="button" role="tab" id="tab-city" data-tab="city" aria-controls="panel-city" aria-selected="true">City</button>
@@ -521,6 +546,11 @@
 
   <!-- RESPOND: compare fixes -->
   <div role="tabpanel" id="panel-respond" aria-labelledby="tab-respond" hidden>
+    <section class="card resilience" aria-labelledby="resilience-title">
+      <div class="card-head"><h2 id="resilience-title">City Resilience Index</h2><span class="hint">Model-derived 0–100 score · equal weight across six dimensions</span></div>
+      <div id="resilience-panel" aria-live="polite"></div>
+      <details><summary>How this score is calculated</summary><p class="note">Each dimension is normalized to 0–100 from the current simulation against its reference city: commute and revenue use current/reference ratios; healthcare uses modeled hospital access; equity is 100 minus the share of residents the impact ledger classifies as worse off; infrastructure is 100 minus the largest utility shortfall or share without a work route; finance uses the 14-day minimum reserve scaled to one day of reserve. Scores are clipped to 0–100 and averaged equally. Missing hospital data is omitted as a neutral 100. This is a transparent prototype index, not a validated forecast.</p></details>
+    </section>
     <section class="card wide" id="compare">
       <div class="card-head"><h2>Compare responses to this event</h2><span class="hint">Event: <span id="cmp-event"></span></span></div>
       <p class="hint" style="margin:0 0 10px">Tries doing nothing, each response alone, and the best combinations you can afford, and ranks them on the total harm to the city over 14 days.</p>
@@ -575,6 +605,7 @@
 <script src="ledger.js"></script>
 <script src="events.js"></script>
 <script src="responses.js"></script>
+<script src="resilience.js"></script>
 <script src="uncertainty.js"></script>
 <script src="assumptions.js"></script>
 <script src="report.js"></script>

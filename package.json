@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "description": "Interactive digital twin of a fictional city",
   "scripts": {
-    "test": "node tests/scenarios.js && node tests/economy.js && node tests/responses.js && node tests/uncertainty.js && node tests/cityfile.js && node tests/assumptions.js && node tests/services.js && node tests/capacity.js && node tests/ledger.js && node tests/routes.js && node tests/report.js && node tests/sensitivity.js && node tests/intro.js",
+    "test": "node tests/scenarios.js && node tests/economy.js && node tests/responses.js && node tests/uncertainty.js && node tests/cityfile.js && node tests/assumptions.js && node tests/services.js && node tests/capacity.js && node tests/ledger.js && node tests/routes.js && node tests/report.js && node tests/sensitivity.js && node tests/intro.js && node tests/resilience.js",
     "test:page": "node tests/page.js",
     "dev": "node scripts/serve.js",
     "start": "node scripts/serve.js",
