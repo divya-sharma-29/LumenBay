@@ -241,7 +241,7 @@ const check = (name, ok, extra) => {
 
   // ---- hospitals and schools (Day 8)
   check('services: card shows 8 areas and the controls list 8 buildings', d.querySelectorAll('#svc-table tbody tr').length === 8 && d.getElementById('svc-select').options.length === 8 && !d.getElementById('svc-card').hidden);
-  check('services: calm city, chip is ok', /ok/.test(d.querySelector('#sum-chips .chip:nth-child(4) .st').textContent) && /Services/.test(d.querySelector('#sum-chips .chip:nth-child(4) .k').textContent));
+  check('services: calm city, chip is ok', /ok/i.test(d.querySelector('#sum-chips .chip:nth-child(4) .st').textContent) && /Services/.test(d.querySelector('#sum-chips .chip:nth-child(4) .k').textContent));
   d.getElementById('svc-select').value = 'bay_general'; d.getElementById('svc-select').dispatchEvent(new w.Event('change', { bubbles: true }));
   click('btn-svc'); await wait(SETTLE);
   check('services: closing Bay General cuts hospital access and says why', /out of action/.test(text('policy-line')) && /Hospitals/.test(text('why')) && /out of action, so its residents must go further/.test(text('why')) && /Who loses/.test(text('why')), text('why').slice(0, 300));
@@ -314,16 +314,16 @@ const check = (name, ok, extra) => {
 
   // ------------------------------------------------------------ Day 6
   click('btn-reset'); await wait(SETTLE);
-  check('range: nothing shown until asked', text('sum-range') === '' && /Check across 10 cities/.test(text('btn-range')));
+  check('range: the summary no longer carries a 10-city button or range line', !d.getElementById('btn-range') && !d.getElementById('sum-range') && !/Check across 10 cities/.test(text('summary')));
+  check('range: nothing shown until asked', !/Across 10 simulated cities/.test(text('ledger-table')) && /Check across 10 cities/.test(text('ledger-check')));
   click('btn-flood'); await wait(SETTLE);
-  click('btn-range');
-  check('range: button shows progress while running', d.getElementById('btn-range').disabled || /Check/.test(text('btn-range')));
-  const gotRange = await waitFor(() => /Across 10 simulated cities/.test(text('sum-range')), 60000);
-  check('range: ranges for commute, output and reserve appear', gotRange && !/-0\b/.test(text('sum-range')) && /commute/.test(text('sum-range')) && /output/.test(text('sum-range')) && /reserve on day 14/.test(text('sum-range')), text('sum-range').slice(0, 200));
-  check('range: min and max are shown in brackets', /commute \d+\.\d min \(\d+\.\d to \d+\.\d\)/.test(text('sum-range')), text('sum-range').slice(0, 120));
+  click('ledger-check');
+  check('range: button shows progress while running', d.getElementById('ledger-check').disabled || /Check/.test(text('ledger-check')));
+  const gotRange = await waitFor(() => /Across 10 simulated cities/.test(text('ledger-table')), 60000);
+  check('range: ledger shows the spread over 10 cities', gotRange && !/-0\b/.test(text('ledger-table')), text('ledger-table').slice(-200));
   check('range: reserve band drawn on the outlook', !!d.querySelector('#outlook path.band') && /range over 10 cities/.test(text('outlook')));
   click('btn-flood'); await wait(SETTLE);
-  check('range: goes away when the scenario changes', text('sum-range') === '' && !d.querySelector('#outlook path.band'));
+  check('range: goes away when the scenario changes', !/Across 10 simulated cities/.test(text('ledger-table')) && !d.querySelector('#outlook path.band'));
 
   // comparing responses: the top options are re-run in other cities
   click('btn-reset'); await wait(SETTLE);

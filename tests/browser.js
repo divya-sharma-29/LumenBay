@@ -54,9 +54,9 @@ async function stress() {
   if (!stale) problems.push('comparison not marked stale after the event changed during it');
   // 3. range check, then change scenario mid-run
   await p.click('#tab-city');
-  await p.click('#btn-range'); await p.waitForTimeout(300); await p.click('#btn-flood');
+  await p.click('#tab-ledger').catch(() => {}); await p.click('#ledger-check'); await p.waitForTimeout(300); await p.click('#btn-flood');
   await p.waitForTimeout(1500);
-  const rangeState = await p.evaluate(() => ({ txt: document.getElementById('btn-range').textContent, dis: document.getElementById('btn-range').disabled, out: document.getElementById('sum-range').textContent }));
+  const rangeState = await p.evaluate(() => ({ txt: (document.getElementById('ledger-check') || {}).textContent || '', dis: !!(document.getElementById('ledger-check') || {}).disabled, out: document.getElementById('ledger-table').textContent }));
   if (rangeState.dis || /Checking/.test(rangeState.txt)) problems.push('range button stuck: ' + JSON.stringify(rangeState));
   if (/Across/.test(rangeState.out)) problems.push('range shown for a scenario that changed: ' + rangeState.out.slice(0, 80));
   // 4. play, then edit mid-play, then play to the end

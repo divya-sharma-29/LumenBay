@@ -829,7 +829,7 @@
   }
   $('lm-base').addEventListener('click', function () { ledgerMode = 'base'; paintLedger(result); });
   $('lm-nothing').addEventListener('click', function () { ledgerMode = 'nothing'; paintLedger(result); });
-  $('ledger-table').addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#ledger-check')) $('btn-range').click(); });
+  $('ledger-table').addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('#ledger-check')) startSpread(); });
 
   // ------------------------------------------------- hospitals and schools
 
@@ -1256,31 +1256,27 @@
       function (p) { spread.done = p.done; spread.planned = p.planned; paintRange(); },
       function (res) { spread.result = res; spread.running = false; paintRange(); paintOutlook(); paintLedger(result); });
   }
-  $('btn-range').addEventListener('click', startSpread);
 
-  function num(v, d) { return (+v.toFixed(d)).toFixed(d); }   // no "-0"
-  function rng(st, d, unit) {
-    return '<b>' + num(st.mean, d) + unit + '</b> <span class="rg">(' + num(st.min, d) + ' to ' + num(st.max, d) + ')</span>';
-  }
+  // The 10-city check is started from the ledger's Uncertainty row; this keeps that button's progress in step.
   function paintRange() {
-    var btn = $('btn-range'), host = $('sum-range');
     if (spread.running && spread.key !== spreadKey()) { spread.token++; spread.running = false; }   // the scenario moved on
-    if (spread.running) {
-      btn.disabled = true; btn.textContent = 'Checking… ' + spread.done + '/' + spread.planned;
-      host.textContent = '';
-      return;
-    }
-    btn.disabled = false;
-    if (!spreadFresh()) { btn.textContent = 'Check across ' + Uncertainty.DEFAULT_RUNS + ' cities'; host.textContent = ''; return; }
-    var m = spread.result.metrics, n = spread.result.n;
-    btn.textContent = 'Re-check';
-    host.innerHTML = 'Across ' + n + ' simulated cities (different homes, jobs and cars; same rules): commute ' + rng(m.commute, 1, ' min') +
-      ' &middot; cannot reach work ' + rng(m.none, 1, '%') +
-      ' &middot; output ' + rng({ mean: m.output.mean / 1000, min: m.output.min / 1000, max: m.output.max / 1000 }, 0, 'k') +
-      ' &middot; reserve on day 14 ' + rng({ mean: m.finalReserve.mean / 1000, min: m.finalReserve.min / 1000, max: m.finalReserve.max / 1000 }, 0, 'k') + '.';
+    var btn = $('ledger-check');
+    if (!btn) return;
+    if (spread.running) { btn.disabled = true; btn.textContent = 'Checking… ' + spread.done + '/' + spread.planned; }
   }
 
   // -------------------------------------------------------------- summary
+
+  var STATUS_ICONS = {   // small 16px line icons, drawn in currentColor
+    Transport: '<path d="M4 16V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10M4 16h12M4 16v1.5M16 16v1.5M4 11h12"/><circle cx="7" cy="13.5" r=".6"/><circle cx="13" cy="13.5" r=".6"/>',
+    Businesses: '<path d="M3 17V8l5-3v12M8 17V4h9v13M2 17h16M11 7.5h3M11 10.5h3M11 13.5h3"/>',
+    Utilities: '<path d="M10.5 2 4.5 11h4.5l-.5 7 6-9h-4.5z"/>',
+    Services: '<path d="M10 3v14M3 10h14"/><rect x="2.5" y="2.5" width="15" height="15" rx="3"/>',
+    Budget: '<rect x="2.5" y="5" width="15" height="10.5" rx="2"/><circle cx="10" cy="10.25" r="2.3"/><path d="M5 8v.01M15 12.5v.01"/>'
+  };
+  function statusIcon(k) {
+    return '<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (STATUS_ICONS[k] || '') + '</svg>';
+  }
 
   function paintSummary(r) {
     var t = r.econ.totals, bt = baseline.econ.totals;
@@ -1326,8 +1322,8 @@
         s: worstDrop <= -2 ? 'residents within reach of a hospital / school: ' + sgn(dh, 0) + ' / ' + sgn(ds, 0) + ' pts' : 'access within limits' });
     }
     $('sum-chips').innerHTML = chips.map(function (c) {
-      return '<div class="chip ' + c.cls + '"><span class="st">' + esc(c.st) + '</span><div class="k">' + c.k + '</div><div class="v">' +
-        esc(c.v) + '</div><div class="s">' + esc(c.s) + '</div></div>';
+      return '<div class="chip ' + c.cls + '"><div class="chip-head">' + statusIcon(c.k) + '<span class="k">' + c.k + '</span><span class="st">' +
+        esc(c.st === 'ok' ? 'OK' : c.st) + '</span></div><div class="v">' + esc(c.v) + '</div><div class="s">' + esc(c.s) + '</div></div>';
     }).join('');
 
     var res = cmp.result, fresh = res && cmp.key === eventKey(scenario);

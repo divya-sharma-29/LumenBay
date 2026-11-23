@@ -680,7 +680,7 @@ export function createCityScene(host, data, handlers) {
     sun.color.setHex(heatwave ? 0xffc36c : 0xfff0d7);
     sun.intensity = heatwave ? 3.65 : 3.2;
     scene.background.setHex(heatwave ? 0xf4b977 : 0x9bd5f1);
-    scene.fog.color.copy(scene.background);
+    if (scene.fog) scene.fog.color.copy(scene.background);
   }
 
   function update(result, weather, selectedId, closedServices) {
